@@ -105,7 +105,7 @@
 
 ## 主屏幕与离线
 
-正式域名为 https://crkcel.com/，部署在 Cloudflare Workers。PWA 使用 standalone 窗口、浅暖色主题与共享莱茵生命图标，iPhone 使用 180px Apple Touch Icon，其他设备提供 192 / 512px 与 maskable 图标，状态栏、底部手势与横屏刘海通过安全区域留白处理。
+正式域名为 https://index.crkcel.com/，部署在 Cloudflare Workers。PWA 使用 standalone 窗口、浅暖色主题与共享莱茵生命图标，iPhone 使用 180px Apple Touch Icon，其他设备提供 192 / 512px 与 maskable 图标，状态栏、底部手势与横屏刘海通过安全区域留白处理。
 
 首次联网准备完整资源（约 34 MiB，包含字体、模型、声音和 40 份档案），HTML 与资源使用同一内容版本；下载成功后新版本进入等待状态，用户选择“更新并重启”后应用。下载失败保留完整旧版本，收藏和偏好不随资源更新清除。设置图标下方保留“设置”文字，新版就绪时在底部状态区提供直接更新入口；`update.html` 提供网络恢复入口。见 `docs/PWA.md`。
 

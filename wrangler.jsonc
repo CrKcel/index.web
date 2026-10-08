@@ -1,5 +1,5 @@
 {
-  "name": "crkcel",
+  "name": "index",
   "workers_dev": false,
   "preview_urls": false,
   "compatibility_date": "2026-10-07",
@@ -9,7 +9,7 @@
   },
   "routes": [
     {
-      "pattern": "crkcel.com",
+      "pattern": "index.crkcel.com",
       "zone_name": "crkcel.com",
       "custom_domain": true,
       "enabled": true,
