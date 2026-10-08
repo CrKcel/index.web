@@ -52,12 +52,19 @@ import {
   cinematicField,
   INSPECTION_LIFT,
   returnStep,
+  type Spring,
 } from "./motion";
 
 const ease = (t: number) => {
   t = THREE.MathUtils.clamp(t, 0, 1);
   return t * t * t * (t * (t * 6 - 15) + 10);
 };
+/**
+ * Upper bound on how fast the archive plane may travel, in world units per
+ * second. Keyboard steps and pointer drags share this bound so neither input
+ * can move the array faster than the authored browsing pace.
+ */
+const MAX_PLANE_SPEED = 4.5;
 /** Lens distance of the settled interactive framing. */
 const ARCHIVE_CAMERA_DISTANCE = 140;
 /**
@@ -240,7 +247,7 @@ export class ArchiveScene {
   private hoverCell: ArchiveCell | null = null;
   private hoverLifts = new Map<string, number>();
   private archiveDrag = new ArchiveDrag();
-  private dragTrack: DragPosition | null = null;
+  private dragTarget: DragPosition | null = null;
   private navigatingDrag = false;
   private archiveMomentum: { motion: ArchivePlaneMomentum; time: number } | null = null;
   private holdingArchive = false;
@@ -1078,6 +1085,24 @@ export class ArchiveScene {
       ? (coordinate - 2) * COLUMN_SPACING
       : -2.17 - (coordinate - 15.5) * ROW_SPACING;
   }
+  /**
+   * Ease a keyboard or selection track toward its target under the plane speed
+   * limit. Frames that would exceed the limit advance the spring in slowed
+   * time, so the motion keeps its easing shape instead of being clipped.
+   */
+  private glide(track: Spring, target: number, dt: number) {
+    const limit = MAX_PLANE_SPEED * dt;
+    const probe = { value: track.value, velocity: track.velocity };
+    damp(probe, target, 3.7, dt);
+    const step = Math.abs(probe.value - track.value);
+    damp(track, target, 3.7, step <= limit ? dt : dt * (limit / step));
+  }
+  /** Follow a pointer-driven target exactly until the speed limit binds. */
+  private follow(track: Spring, target: number, dt: number) {
+    const previous = track.value;
+    track.value = previous + THREE.MathUtils.clamp(target - previous, -MAX_PLANE_SPEED * dt, MAX_PLANE_SPEED * dt);
+    if (dt > 0) track.velocity = (track.value - previous) / dt;
+  }
   private navigatePlane(coordinate: DragPosition) {
     const goal = { lane: Math.round(coordinate.lane), row: Math.round(coordinate.row) };
     if (sameCell(goal, this.selectedCell)) return;
@@ -1144,7 +1169,7 @@ export class ArchiveScene {
       const id = activePointer;
       activePointer = null;
       this.dragging = false;
-      this.dragTrack = null;
+      this.dragTarget = null;
       this.holdingArchive = false;
       browse = false;
       this.setHover(null);
@@ -1173,17 +1198,12 @@ export class ArchiveScene {
       this.setHover(null);
       this.lastInteraction = this.clock;
       canvas.style.cursor = "grabbing";
-      this.dragTrack = {
+      // The pointer only names the destination; update() advances the plane
+      // toward it under the shared speed limit.
+      this.dragTarget = {
         lane: startTrack.lane + this.archiveDrag.value.lane * COLUMN_SPACING,
         row: startTrack.row - this.archiveDrag.value.row * ROW_SPACING,
       };
-      this.columnCamera.value = this.dragTrack.lane;
-      this.rail.value = this.dragTrack.row;
-      this.columnCamera.velocity = this.rail.velocity = 0;
-      this.navigatePlane({
-        lane: this.trackCoordinate("lane", this.columnCamera.value),
-        row: this.trackCoordinate("row", this.rail.value),
-      });
     };
     canvas.addEventListener("pointerdown", (e) => {
       if (e.pointerType === "mouse" && e.button !== 0) return;
@@ -1400,8 +1420,14 @@ export class ArchiveScene {
     damp(this.laneFocus, selectedLane, this.motion.selectionTransition ? 4 : 35, dt);
     // A held or freely coasting plane owns both tracks; selection cannot pull it.
     if (!this.holdingArchive && !momentum) {
-      damp(this.columnCamera, chosen.x, this.motion.selectionTransition ? 3.7 : 35, dt);
-      damp(this.rail, cinematic ? 0 : -2.17 - chosen.z, this.motion.selectionTransition ? 3.7 : 35, dt);
+      const row = cinematic ? 0 : -2.17 - chosen.z;
+      if (this.motion.selectionTransition) {
+        this.glide(this.columnCamera, chosen.x, dt);
+        this.glide(this.rail, row, dt);
+      } else {
+        damp(this.columnCamera, chosen.x, 35, dt);
+        damp(this.rail, row, 35, dt);
+      }
     }
     if (momentum) {
       this.columnCamera.value = this.trackPosition("lane", momentum.motion.lane.value);
@@ -1410,10 +1436,13 @@ export class ArchiveScene {
       this.rail.velocity = -momentum.motion.row.velocity * ROW_SPACING;
       if (momentum.motion.phase === "idle") this.archiveMomentum = null;
     }
-    if (this.dragTrack && !cinematic) {
-      this.columnCamera.value = this.dragTrack.lane;
-      this.rail.value = this.dragTrack.row;
-      this.columnCamera.velocity = this.rail.velocity = 0;
+    if (this.dragTarget && !cinematic) {
+      this.follow(this.columnCamera, this.dragTarget.lane, dt);
+      this.follow(this.rail, this.dragTarget.row, dt);
+      this.navigatePlane({
+        lane: this.trackCoordinate("lane", this.columnCamera.value),
+        row: this.trackCoordinate("row", this.rail.value),
+      });
     }
     if (cinematic) {
       this.rail.value = 0;
@@ -2017,7 +2046,7 @@ export class ArchiveScene {
       selectedCell: { ...this.selectedCell },
       hoverCell: this.hoverCell ? { ...this.hoverCell } : null,
       hoverLifts: Object.fromEntries(this.hoverLifts),
-      dragTrack: this.dragTrack ? { ...this.dragTrack } : null,
+      dragTarget: this.dragTarget ? { ...this.dragTarget } : null,
       archiveMomentum: this.archiveMomentum ? {
         phase: this.archiveMomentum.motion.phase,
         value: this.archiveMomentum.motion.value,

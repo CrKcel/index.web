@@ -15,6 +15,21 @@ const browser = await chromium.launch({
 const report = [];
 await mkdir(".tools/array-input", { recursive: true });
 const stats = (page) => page.evaluate(() => rhine.stats());
+// Plane travel is speed limited, so a gesture needs a moment before the array
+// reaches the projected pointer destination.
+const projected = (page) =>
+  page.waitForFunction(
+    () => {
+      const s = window.rhine.stats();
+      return (
+        s.dragTarget !== null &&
+        Math.abs(s.columnCamera - s.dragTarget.lane) < 0.05 &&
+        Math.abs(s.rail - s.dragTarget.row) < 0.05
+      );
+    },
+    null,
+    { timeout: 8000 },
+  );
 try {
   for (const [width, height, mobile] of [
     [1920, 1080, false],
@@ -87,14 +102,14 @@ try {
         // Use the camera at pointer-down; mouse parallax can slightly change it.
         const direction = captured.dragProjection[axis];
         await move(x + direction.x * amount, y + direction.y * amount);
-        await page.waitForTimeout(160);
+        await projected(page);
         const during = await stats(page);
         assert.equal(
           during.dragMapping,
           "free",
           `${width}x${height}: ${axis} uses the camera projection`,
         );
-        assert.ok(during.dragTrack);
+        assert.ok(during.dragTarget);
         const track = axis === "lane" ? "columnCamera" : "rail",
           spacing = axis === "lane" ? 5.2 : -0.62;
         assert.ok(
@@ -130,7 +145,7 @@ try {
     ];
     for (const [dx, dy] of paths) {
       await move(x + dx, y + dy);
-      await page.waitForTimeout(100);
+      await projected(page);
       const state = await stats(page);
       const lane = (state.columnCamera - anchor.columnCamera) / 5.2;
       const row = (state.rail - anchor.rail) / -0.62;

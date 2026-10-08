@@ -18,6 +18,21 @@ const rest = (page) =>
   page.waitForFunction(() => !window.rhine.stats().archiveMomentum, null, {
     timeout: 12000,
   });
+// Plane travel is speed limited, so a gesture needs a moment before the array
+// reaches the projected pointer destination.
+const projected = (page) =>
+  page.waitForFunction(
+    () => {
+      const s = window.rhine.stats();
+      return (
+        s.dragTarget !== null &&
+        Math.abs(s.columnCamera - s.dragTarget.lane) < 0.05 &&
+        Math.abs(s.rail - s.dragTarget.row) < 0.05
+      );
+    },
+    null,
+    { timeout: 8000 },
+  );
 try {
   for (const mobile of [false, true].filter(
     (mobile) =>
@@ -141,7 +156,10 @@ try {
     assert.deepEqual(held.selectedCell, caught.selectedCell);
     const capturedVector = caught.dragProjection.lane;
     await move(x + capturedVector.x * 0.8, y + capturedVector.y * 0.8);
-    await page.waitForTimeout(160);
+    // Let the plane reach the projected cell, then let the pointer rest so the
+    // release does not start a coast.
+    await projected(page);
+    await page.waitForTimeout(150);
     await up();
     await rest(page);
     assert.equal(
