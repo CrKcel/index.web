@@ -182,17 +182,19 @@ export function motionSettingsMarkup(
   const presetButton = (value: "full" | "reduced" | "custom", label: string) =>
     `<button type="button" data-action="motion-preset" data-preset="${value}" aria-pressed="${selected === value}"${value === "custom" ? " disabled" : ""}>${label}</button>`;
   return `<section id="motion-settings" class="motion-settings" aria-label="动效设置"><div class="motion-settings-head"><div><strong>ANIMATION CONTROLS</strong><span>完整、减少或按分项自定义；关闭后会立即收束当前动画（开场设置下次重播生效）</span></div>${presetButton("full", "完整")}${presetButton("reduced", "减少")}${presetButton("custom", "自定义")}</div><details class="motion-advanced"><summary>精细设置</summary><div class="motion-groups">${groups
-    .map(
-      (group) =>
-        `<fieldset><legend>${group}</legend>${(
-          Object.keys(MOTION_LABELS) as MotionKey[]
-        )
-          .filter((key) => MOTION_LABELS[key].group === group)
-          .map((key) => {
-            const item = MOTION_LABELS[key];
-            return `<label class="motion-setting"><div><strong>${item.title}</strong><span>${item.description}</span></div><input type="checkbox" data-motion="${key}" ${motion[key] ? "checked" : ""}/><i class="toggle"></i></label>`;
-          })
-          .join("")}</fieldset>`,
-    )
+    .map((group) => {
+      const keys = (Object.keys(MOTION_LABELS) as MotionKey[]).filter(
+        (key) => MOTION_LABELS[key].group === group,
+      );
+      const settings = keys
+        .map((key) => {
+          const item = MOTION_LABELS[key];
+          return `<label class="motion-setting"><div><strong>${item.title}</strong><span>${item.description}</span></div><input type="checkbox" data-motion="${key}" ${motion[key] ? "checked" : ""}/><i class="toggle"></i></label>`;
+        })
+        .join("");
+      // Odd groups leave one trailing half-row; the fill keeps the row rule continuous.
+      const fill = keys.length % 2 ? '<span class="motion-setting-fill" aria-hidden="true"></span>' : "";
+      return `<fieldset><legend>${group}</legend>${settings}${fill}</fieldset>`;
+    })
     .join("")}</div></details></section>`;
 }
