@@ -10,3 +10,13 @@ assert.equal(wave.sample(center,2),0);assert.equal(wave.sample(far,2),0);assert.
 wave.set(true,3,center,true);assert.equal(wave.sample(far,3),1);assert.equal(wave.background(3),1,'Reduced motion goes directly to target');
 wave.set(false,4,center);wave.beginFrame();for(let i=-100;i<100;i++){const n=wave.sample({lane:i,row:i},4.2);assert.ok(n>=0&&n<=1)}
 console.log('Theme cascade, reversal continuity, endpoints, reduced motion and bounded values passed.');
+
+const colorSource=ts.transpileModule(readFileSync('src/color-theme.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+const {isColorTheme,resolveDarkTheme}=await import(`data:text/javascript;base64,${Buffer.from(colorSource).toString('base64')}`);
+assert.ok(isColorTheme('system')&&isColorTheme('light')&&isColorTheme('dark'));
+assert.ok(!isColorTheme('auto')&&!isColorTheme(undefined),'Rejects values outside the three options');
+assert.equal(resolveDarkTheme('system',true),true,'System follows a dark media query');
+assert.equal(resolveDarkTheme('system',false),false,'System follows a light media query');
+assert.equal(resolveDarkTheme('light',true),false,'Explicit light ignores the media query');
+assert.equal(resolveDarkTheme('dark',false),true,'Explicit dark ignores the media query');
+console.log('Color theme validation and system resolution passed.');

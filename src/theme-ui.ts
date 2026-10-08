@@ -1,4 +1,5 @@
 import "./theme.css";
+import { colorThemes, ColorTheme } from "./color-theme";
 const palette = {
   ink: ["#080a08", "#e0e3dc"], muted: ["#77756d", "#a6b0b1"], line: ["#aaa59a", "#536166"],
   paper: ["#eae5e1", "#11181b"], panel: ["#edebe4", "#202a2f"], field: ["#e7e3d9", "#2a363b"],
@@ -19,6 +20,10 @@ export function paintTheme(amount: number) {
     root.style.setProperty(`--theme-${name}-rgb`, value);
   }
 }
-export function themeSettingsMarkup(dark: boolean) {
-  return `<div class="theme-settings"><div><strong>界面配色</strong><span>玻璃阵列随配色逐张过渡</span></div><div class="theme-choices" role="group" aria-label="界面配色"><button data-color-theme="light" aria-pressed="${!dark}">亮色</button><button data-color-theme="dark" aria-pressed="${dark}">暗色</button></div></div>`;
+
+export function themeSettingsMarkup(theme: ColorTheme) {
+  const choices = colorThemes
+    .map(([value, label]) => `<button data-color-theme="${value}" aria-pressed="${theme === value}">${label}</button>`)
+    .join("");
+  return `<div class="theme-settings"><div><strong>界面配色</strong><span>玻璃阵列随配色逐张过渡</span></div><div class="theme-choices" role="group" aria-label="界面配色">${choices}</div></div>`;
 }
