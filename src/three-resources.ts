@@ -9,7 +9,7 @@ export function disposeThreeTree(root: THREE.Object3D) {
     if (!(object instanceof THREE.Mesh)) return;
     if (object instanceof THREE.InstancedMesh) object.dispose();
     geometries.add(object.geometry);
-    for (const material of [object.material, object.userData.fullMaterial, object.userData.fastMaterial].flat())
+    for (const material of [object.material].flat())
       if (material instanceof THREE.Material) materials.add(material);
   });
   for (const material of materials) {

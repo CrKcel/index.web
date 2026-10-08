@@ -38,7 +38,6 @@ export function resizeQuality(
   composer: EffectComposer,
   host: HTMLElement,
   quality: RenderQuality,
-  superPerformance = false,
 ) {
   const width = Math.max(1, host.clientWidth),
     height = Math.max(1, host.clientHeight);
@@ -49,7 +48,6 @@ export function resizeQuality(
     host.getBoundingClientRect().width / width,
     devicePixelRatio,
     renderer.capabilities.maxTextureSize,
-    superPerformance ? 921_600 : 8_294_400,
   );
   renderer.setPixelRatio(dimensions.ratio);
   renderer.setSize(width, height);
@@ -64,7 +62,6 @@ export function resizeQuality(
       quality.anisotropy,
       renderer.capabilities.getMaxAnisotropy(),
     ),
-    superPerformance,
   });
   return dimensions;
 }

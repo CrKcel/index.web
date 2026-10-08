@@ -114,40 +114,14 @@ export class ArchiveScene {
   private theme = new ThemeWave();
   private subduedIndex = { value: 0 };
   private selectedIndexOnly = false;
-  private superPerformance = false;
-  setSuperPerformance(enabled: boolean) {
-    if (this.superPerformance === enabled) return;
-    this.superPerformance = enabled;
-    // Baked silhouettes carry no transmission or clearcoat to switch.
-    for (const inst of this.surfaceInstances) {
-      const original = (inst.userData.fullMaterial ??= inst.material) as THREE.MeshPhysicalMaterial;
-      if (enabled && !inst.userData.fastMaterial) {
-        const fast = original.clone();
-        fast.onBeforeCompile = original.onBeforeCompile;
-        fast.customProgramCacheKey = original.customProgramCacheKey.bind(original);
-        fast.transmission = 0;
-        fast.clearcoat = 0;
-        fast.roughness = Math.max(.45, original.roughness);
-        inst.userData.fastMaterial = fast;
-      }
-      inst.material = enabled ? inst.userData.fastMaterial : original;
-    }
-    this.resize();
-  }
   /**
    * Interactive browsing draws the baked proxy; only the reference opening
    * turns its camera, so only that segment draws the modelled surfaces.
-   * Super performance hides the array fasteners, which live in the bake here.
    */
   private syncInstanceVisibility(cinematic: boolean) {
     if (this.impostor) this.impostor.visible = !cinematic;
     for (const inst of this.surfaceInstances)
-      inst.visible =
-        cinematic &&
-        !(
-          this.superPerformance &&
-          inst.userData.arraySurface === "Titanium_Fasteners"
-        );
+      inst.visible = cinematic;
   }
   setSelectedIndexAccent(onlySelected: boolean) { this.selectedIndexOnly = onlySelected; }
   private themeAttribute?: THREE.InstancedBufferAttribute;
@@ -516,7 +490,6 @@ export class ArchiveScene {
       inst.castShadow = name === "Optical_Diffuser";
       inst.receiveShadow = true;
       inst.frustumCulled = false;
-      inst.userData.arraySurface = name;
       this.surfaceInstances.push(inst);
       this.scene.add(inst);
     }
@@ -1006,13 +979,12 @@ export class ArchiveScene {
       this.composer,
       this.container,
       this.quality,
-      this.superPerformance,
     );
     this.ao.setSize(
       Math.max(1, Math.floor(dimensions.width * this.quality.aoResolution)),
       Math.max(1, Math.floor(dimensions.height * this.quality.aoResolution)),
     );
-    this.ao.setSharing(this.ao.enabled && this.bokeh.enabled && this.quality.aoResolution === 1 && !this.superPerformance);
+    this.ao.setSharing(this.ao.enabled && this.bokeh.enabled && this.quality.aoResolution === 1);
     this.container.dataset.renderQuality = JSON.stringify({
       ...JSON.parse(this.container.dataset.renderQuality!),
       aoSamples: this.ao.enabled ? this.aoKernelSize : 0,
@@ -1985,8 +1957,7 @@ export class ArchiveScene {
       if (object instanceof THREE.InstancedMesh) shadow.add(object.count, object.instanceMatrix.version);
     });
     this.renderer.shadowMap.needsUpdate = shadow.end() || this.light.shadow.needsUpdate;
-    if (this.superPerformance) this.renderer.render(this.scene, this.camera);
-    else this.composer.render();
+    this.composer.render();
   }
   projectCard(x: number, y: number) {
     this.model.updateMatrixWorld(true);
@@ -2025,7 +1996,6 @@ export class ArchiveScene {
       drawCalls: this.renderer.info.render.calls,
       renderedFrames: this.renderedFrames,
       reusedFrames: this.reusedFrames,
-      superPerformance: this.superPerformance,
       presentation: this.presence,
       triangles: this.renderer.info.render.triangles,
       archiveCount: this.drawnCells.length,

@@ -11,19 +11,6 @@ export type RenderQuality = {
   anisotropy: number;
 };
 
-/** Reduced render load for the web super performance mode; animation is unchanged. */
-export const superPerformanceQuality: RenderQuality = {
-  scale: 60,
-  pixelRatio: 1,
-  antialias: "off",
-  shadows: 0,
-  aoSamples: 0,
-  aoResolution: 0.5,
-  depthOfField: 0,
-  transmission: 0.25,
-  anisotropy: 2,
-};
-
 export const qualityPresets = {
   performance: {
     scale: 80,
