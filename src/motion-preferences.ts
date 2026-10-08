@@ -171,19 +171,6 @@ export function motionEnabled(motion: MotionPreferences, key: MotionKey) {
   return motion[key];
 }
 
-export function motionSummary(motion: MotionPreferences) {
-  const enabled = Object.values(motion).filter(Boolean).length;
-  if (enabled === Object.keys(motion).length) return "当前使用完整动画。";
-  if (enabled === 0) return "当前已减少动画。";
-  const highlights: string[] = [];
-  if (!motion.boot) highlights.push("开场已跳过");
-  if (!motion.selectionWave && !motion.idleWave)
-    highlights.push("阵列波动已关闭");
-  if (!motion.rollingText && !motion.rollingNumbers)
-    highlights.push("文字滚动已关闭");
-  return `当前使用自定义动画（${highlights.slice(0, 2).join("、") || `启用 ${enabled} 项`}）。`;
-}
-
 export function motionSettingsMarkup(
   motion: MotionPreferences,
   preset?: MotionPreset,
@@ -194,7 +181,7 @@ export function motionSettingsMarkup(
   const selected = preset ?? motionPresetFor(motion);
   const presetButton = (value: "full" | "reduced" | "custom", label: string) =>
     `<button type="button" data-action="motion-preset" data-preset="${value}" aria-pressed="${selected === value}"${value === "custom" ? " disabled" : ""}>${label}</button>`;
-  return `<section id="motion-settings" class="motion-settings" aria-label="动效设置"><div class="motion-settings-head"><div><strong>ANIMATION CONTROLS</strong><span>完整、减少或按分项自定义；关闭后会立即收束当前动画（开场设置下次重播生效）</span></div>${presetButton("full", "完整")}${presetButton("reduced", "减少")}${presetButton("custom", "自定义")}</div><details class="motion-advanced"><summary>精细设置 <span>开场 / 阵列 / 详情 / 界面 / 360° 查看器</span></summary><div class="motion-groups">${groups
+  return `<section id="motion-settings" class="motion-settings" aria-label="动效设置"><div class="motion-settings-head"><div><strong>ANIMATION CONTROLS</strong><span>完整、减少或按分项自定义；关闭后会立即收束当前动画（开场设置下次重播生效）</span></div>${presetButton("full", "完整")}${presetButton("reduced", "减少")}${presetButton("custom", "自定义")}</div><details class="motion-advanced"><summary>精细设置</summary><div class="motion-groups">${groups
     .map(
       (group) =>
         `<fieldset><legend>${group}</legend>${(

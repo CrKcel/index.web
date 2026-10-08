@@ -36,7 +36,6 @@ import {
   motionEnabled,
   motionPresetFor,
   motionSettingsMarkup,
-  motionSummary,
   reducedMotion,
   type MotionKey,
   type MotionPreset,
@@ -279,7 +278,6 @@ function savePrefs() {
   viewer?.setQuality(prefs.rendering);
   viewer?.setMotion(prefs.motion);
   syncQualityUI(prefs.rendering);
-  updateQualitySummary();
   fileCounter.update({ animated: motionActive("rollingNumbers") && mode === "archive" });
   rollingTitles.forEach(title => title.update({ animated: motionActive("rollingText") && mode === "archive" }));
   columnCounter.update({ animated: motionActive("rollingNumbers") && mode === "archive" });
@@ -323,7 +321,6 @@ function fit() {
     scene?.resize();
     viewer?.resize();
   }
-  updateQualitySummary();
   // Re-measure line covers and tab underline after wrapping changes.
   requestAnimationFrame(() => {
     documentDecryption.refresh();
@@ -631,7 +628,6 @@ function renderModal() {
   backdrop.hidden = true;
   modalTransition = new SurfaceTransition(backdrop, $(".terminal-modal"));
   modalTransition.show(!motionActive("surfaceTransitions"));
-  if (modal === "settings") updateQualitySummary();
   if (modal !== "settings") {
     renderResults();
     requestAnimationFrame(() => {
@@ -669,21 +665,8 @@ function renderResults() {
   $("#result-count").textContent =
     `${String(results.length).padStart(2, "0")} RECORDS FOUND`;
 }
-function updateQualitySummary() {
-  const summary = document.querySelector("#quality-summary");
-  if (!summary) return;
-  if (!scene) { summary.textContent = "3D 已关闭 · 三维模型与渲染资源已释放"; return; }
-  const canvas = scene.renderer.domElement;
-  const metrics = JSON.parse(canvas.parentElement?.dataset.renderQuality ?? "{}");
-  summary.textContent = `实际渲染 ${canvas.width} × ${canvas.height} · ${prefs.rendering.antialias === "smaa" ? "SMAA" : "原始抗锯齿"} · 纹理 ${metrics.anisotropy ?? 1}×${metrics.limited ? " · 已达到缓冲上限" : ""}`;
-}
-function motionPreferenceNoteMarkup() {
-  const preset = prefs.motionPreset;
-  const allEnabled = Object.values(prefs.motion).every(Boolean);
-  return `<div id="motion-preference-note" class="motion-preference-note"><p>${motionSummary(prefs.motion)}</p><span>预设：${preset === "full" ? "完整动画" : preset === "reduced" ? "减少动画" : "自定义"} · 选择会保存在本站</span>${allEnabled ? "" : '<button data-action="enable-motion">启用完整动画并重播 ↻</button>'}</div>`;
-}
 function settingsMarkup() {
-  return `<h2>SYSTEM SETTINGS<small>终端偏好设置</small></h2><p class="settings-intro">JOYCE MOORE <span>·</span> SESSION AUTHORIZED</p><div class="settings-list">${themeSettingsMarkup(prefs.colorTheme)}${audioSettingsMarkup(prefs)}</div>${motionPreferenceNoteMarkup()}${motionSettingsMarkup(prefs.motion, prefs.motionPreset)}${qualityMarkup(prefs.rendering)}${pwaSettingsMarkup()}<div class="settings-shortcuts"><span>KEYBOARD CONTROLS</span><p><kbd>←</kbd><kbd>→</kbd> 切列 <kbd>↑</kbd><kbd>↓</kbd> 选档 <kbd>ENTER</kbd> 读取 <kbd>/</kbd> 检索 <kbd>ESC</kbd> 返回</p></div><div class="settings-bottom">${document.fullscreenEnabled ? '<button data-action="fullscreen">FULLSCREEN <span>↗</span></button>' : ''}<button data-action="restart">REINITIALIZE SYSTEM <span>↻</span></button></div><div class="modal-bottom"><span>ANALYSIS OS / 1.0 · 使用 MiSans 字体（小米） <a href="${assetUrl("fonts/MiSans-license.pdf")}" target="_blank" rel="noopener">字体许可</a></span><span>POWERED BY RHINE LAB</span></div>`;
+  return `<h2>SYSTEM SETTINGS<small>终端偏好设置</small></h2><p class="settings-intro">JOYCE MOORE <span>·</span> SESSION AUTHORIZED</p><div class="settings-list">${themeSettingsMarkup(prefs.colorTheme)}${audioSettingsMarkup(prefs)}</div>${motionSettingsMarkup(prefs.motion, prefs.motionPreset)}${qualityMarkup(prefs.rendering)}${pwaSettingsMarkup()}<div class="settings-shortcuts"><span>KEYBOARD CONTROLS</span><p><kbd>←</kbd><kbd>→</kbd> 切列 <kbd>↑</kbd><kbd>↓</kbd> 选档 <kbd>ENTER</kbd> 读取 <kbd>/</kbd> 检索 <kbd>ESC</kbd> 返回</p></div><div class="settings-bottom">${document.fullscreenEnabled ? '<button data-action="fullscreen">FULLSCREEN <span>↗</span></button>' : ''}<button data-action="restart">REINITIALIZE SYSTEM <span>↻</span></button></div><div class="modal-bottom"><span>ANALYSIS OS / 1.0 · 使用 MiSans 字体（小米） <a href="${assetUrl("fonts/MiSans-license.pdf")}" target="_blank" rel="noopener">字体许可</a></span><span>POWERED BY RHINE LAB</span></div>`;
 }
 
 document.addEventListener("input", (e) => {
@@ -729,7 +712,6 @@ document.addEventListener("change", (e) => {
     const settingsPanel = motionRoot.closest<HTMLElement>(".settings-modal");
     const scrollTop = settingsPanel?.scrollTop ?? 0;
     motionRoot.outerHTML = motionSettingsMarkup(prefs.motion, prefs.motionPreset);
-    $("#motion-preference-note").outerHTML = motionPreferenceNoteMarkup();
     $("#motion-settings").querySelector<HTMLDetailsElement>(".motion-advanced")!.open = advancedOpen;
     requestAnimationFrame(() => {
       if (settingsPanel) settingsPanel.scrollTop = scrollTop;
@@ -833,12 +815,6 @@ document.addEventListener("click", (e) => {
     renderModal();
   }
   if (action === "replay" || action === "restart") {
-    replayBoot();
-  }
-  if (action === "enable-motion") {
-    prefs.motion = fullMotion();
-    prefs.motionPreset = "full";
-    savePrefs();
     replayBoot();
   }
   if (action === "fullscreen" && document.fullscreenEnabled) {

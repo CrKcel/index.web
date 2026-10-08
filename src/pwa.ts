@@ -10,7 +10,6 @@ let ready = false, failed = false, reloading = false, started = false;
 let tell: (message: string) => void = () => {};
 const installed = () => matchMedia("(display-mode: standalone)").matches ||
   Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
-const ios = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
 window.addEventListener("beforeinstallprompt", event => {
   event.preventDefault();
@@ -21,17 +20,7 @@ window.addEventListener("appinstalled", () => { installPrompt = undefined; refre
 matchMedia("(display-mode: standalone)").addEventListener("change", refresh);
 
 export function pwaSettingsMarkup() {
-  const status = !import.meta.env.PROD ? "开发预览不保存离线副本。"
-    : !window.isSecureContext ? "使用 HTTPS 地址后可保存离线副本。"
-    : !("serviceWorker" in navigator) ? "当前浏览器支持在线使用。"
-    : failed ? "离线副本未能保存，可联网后重试。"
-    : ready ? "离线资源已就绪，可离线浏览档案与模型。"
-    : "正在准备离线资源，首次需要保持联网。";
-  const guidance = installed() ? "已从主屏幕打开。"
-    : ios() ? "在 Safari 中轻点“分享”→“添加到主屏幕”，然后从主屏幕图标打开。"
-    : installPrompt ? "安装后可在独立窗口中打开档案。"
-    : "可通过浏览器菜单安装或添加到主屏幕。";
-  return `<section id="pwa-settings" class="pwa-settings" aria-label="主屏幕与离线使用"><h3>APP / 主屏幕与离线</h3><p>${guidance}</p><p class="pwa-status" role="status">${status}</p><div class="pwa-actions">${installPrompt && !installed() ? '<button data-pwa-action="install">安装到设备 ↗</button>' : ""}${registration?.waiting ? '<span>新版本已准备好</span><button data-pwa-action="update">更新并重启 ↻</button>' : ""}${failed ? '<button data-pwa-action="retry">重试保存离线资源 ↻</button>' : ""}</div></section>`;
+  return `<section id="pwa-settings" class="pwa-settings" aria-label="主屏幕与离线使用"><h3>APP / 主屏幕与离线</h3><div class="pwa-actions">${installPrompt && !installed() ? '<button data-pwa-action="install">安装到设备 ↗</button>' : ""}${registration?.waiting ? '<span>新版本已准备好</span><button data-pwa-action="update">更新并重启 ↻</button>' : ""}${failed ? '<button data-pwa-action="retry">重试保存离线资源 ↻</button>' : ""}</div></section>`;
 }
 function refresh() {
   const current = document.querySelector("#pwa-settings");
