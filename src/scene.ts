@@ -39,6 +39,7 @@ import { archiveFraming } from "./viewport-layout";
 import { ArchiveDrag, ArchivePlaneMomentum, type DragAxis, type DragProjection, type DragPosition } from "./archive-drag";
 import { assetUrl as publicAsset } from "./asset-url";
 import { fullMotion, reducedMotion, type MotionPreferences } from "./motion-preferences";
+import { createCardImpostorMaterial, fitCardImpostor } from "./archive-card-bake";
 import {
   archiveWave,
   extraction,
@@ -57,6 +58,21 @@ const ease = (t: number) => {
   t = THREE.MathUtils.clamp(t, 0, 1);
   return t * t * t * (t * (t * 6 - 15) + 10);
 };
+/** Lens distance of the settled interactive framing. */
+const ARCHIVE_CAMERA_DISTANCE = 140;
+/**
+ * Direction of the settled interactive framing. `ease` saturates before the
+ * reference move ends, so the settle values are the authored endpoints.
+ */
+function interactiveViewDirection() {
+  const yaw = THREE.MathUtils.degToRad(89 - 22 - 8);
+  const elevation = THREE.MathUtils.degToRad(3 + 40 - 8 - 16);
+  return new THREE.Vector3(
+    -Math.sin(yaw) * Math.cos(elevation),
+    Math.sin(elevation),
+    Math.cos(yaw) * Math.cos(elevation),
+  ).normalize();
+}
 export class ArchiveScene {
   private inputEvents = new AbortController();
   private presence = 1;
@@ -75,11 +91,15 @@ export class ArchiveScene {
   dispose() {
     this.inputEvents.abort();
     this.cancelPointer();
+    for (const target of this.impostorTargets) target.dispose();
+    this.impostorTargets = [];
+    this.impostor = undefined;
+    this.instances = [];
+    this.surfaceInstances = [];
     disposeThreeTree(this.scene);
     this.appearance.disposeSources();
     this.model.clear();
     this.outgoing = [];
-    this.instances = [];
     this.assemblyTemplate?.then(disposeThreeTree).catch(() => {});
     this.assemblyTemplate = undefined;
     this.light.shadow.map?.dispose();
@@ -98,7 +118,8 @@ export class ArchiveScene {
   setSuperPerformance(enabled: boolean) {
     if (this.superPerformance === enabled) return;
     this.superPerformance = enabled;
-    for (const inst of this.instances) {
+    // Baked silhouettes carry no transmission or clearcoat to switch.
+    for (const inst of this.surfaceInstances) {
       const original = (inst.userData.fullMaterial ??= inst.material) as THREE.MeshPhysicalMaterial;
       if (enabled && !inst.userData.fastMaterial) {
         const fast = original.clone();
@@ -110,9 +131,23 @@ export class ArchiveScene {
         inst.userData.fastMaterial = fast;
       }
       inst.material = enabled ? inst.userData.fastMaterial : original;
-      inst.visible = !enabled || original.name.replace(/\.\d+$/, "") !== "Titanium_Fasteners";
     }
     this.resize();
+  }
+  /**
+   * Interactive browsing draws the baked proxy; only the reference opening
+   * turns its camera, so only that segment draws the modelled surfaces.
+   * Super performance hides the array fasteners, which live in the bake here.
+   */
+  private syncInstanceVisibility(cinematic: boolean) {
+    if (this.impostor) this.impostor.visible = !cinematic;
+    for (const inst of this.surfaceInstances)
+      inst.visible =
+        cinematic &&
+        !(
+          this.superPerformance &&
+          inst.userData.arraySurface === "Titanium_Fasteners"
+        );
   }
   setSelectedIndexAccent(onlySelected: boolean) { this.selectedIndexOnly = onlySelected; }
   private themeAttribute?: THREE.InstancedBufferAttribute;
@@ -166,7 +201,13 @@ export class ArchiveScene {
   private composer: EffectComposer;
   private ao: SharedDepthAO;
   private bokeh: BokehPass;
+  // Interactive browsing draws one baked projection per card; the cinematic
+  // keeps the modelled surfaces. Both share one transform and theme buffer.
   private instances: THREE.InstancedMesh[] = [];
+  private surfaceInstances: THREE.InstancedMesh[] = [];
+  private impostor?: THREE.InstancedMesh;
+  private impostorTargets: THREE.WebGLRenderTarget[] = [];
+  private floor?: THREE.Mesh;
   private matrixUpdates?: InstanceUpdates;
   private themeUpdates?: InstanceUpdates;
   private renderState = new RenderState();
@@ -311,6 +352,7 @@ export class ArchiveScene {
     floor.position.y = -4.63;
     floor.receiveShadow = true;
     this.scene.add(floor);
+    this.floor = floor;
     this.camera.position.set(-62.26, 35.98, 43.28);
     this.cameraAim.set(-0.5, 1.1, 0.4);
     this.camera.fov = 6.15;
@@ -470,15 +512,17 @@ export class ArchiveScene {
       themeMaterial(arrayMat, name, true, this.subduedIndex);
       const inst = new THREE.InstancedMesh(geom, arrayMat, count);
       // All surfaces move rigidly together; share the transform buffer on the GPU.
-      inst.instanceMatrix = this.instances[0]?.instanceMatrix ?? inst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      inst.instanceMatrix = this.surfaceInstances[0]?.instanceMatrix ?? inst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       inst.castShadow = name === "Optical_Diffuser";
       inst.receiveShadow = true;
       inst.frustumCulled = false;
-      this.instances.push(inst);
+      inst.userData.arraySurface = name;
+      this.surfaceInstances.push(inst);
       this.scene.add(inst);
     }
-    this.shadowCoverage = new ArchiveShadowCoverage(this.instances.find(mesh => mesh.castShadow)!);
+    this.shadowCoverage = new ArchiveShadowCoverage(this.surfaceInstances.find(mesh => mesh.castShadow)!);
     this.scene.add(this.shadowCoverage.mesh);
+    this.buildCardImpostor();
     this.labelCanvas.width = 1024;
     this.labelCanvas.height = 440;
     this.labelTexture = new THREE.CanvasTexture(this.labelCanvas);
@@ -502,6 +546,127 @@ export class ArchiveScene {
     this.scene.add(this.model);
     this.model.position.copy(this.cellPosition(poolCell(this.selectedSlot)));
     this.loaded = true;
+  }
+
+  /**
+   * Interactive cards are a card-shaped proxy carrying one baked projection.
+   * The card is rendered once per theme endpoint from the settled camera
+   * direction, so every instance shares the result and no array card entangles
+   * a frame in the extra transmission, depth and normal passes the five
+   * modelled surfaces produced. The reference opening orbits its camera, so the
+   * cinematic keeps the modelled surfaces.
+   */
+  private buildCardImpostor() {
+    const themeAttribute = this.themeAttribute;
+    const source = this.surfaceInstances[0];
+    if (!themeAttribute || !source) return;
+    const box = new THREE.Box3();
+    for (const inst of this.surfaceInstances) {
+      inst.geometry.computeBoundingBox();
+      if (inst.geometry.boundingBox) box.union(inst.geometry.boundingBox);
+    }
+    if (box.isEmpty()) return;
+    const fit = fitCardImpostor({
+      box,
+      viewDirection: interactiveViewDirection(),
+      distance: ARCHIVE_CAMERA_DISTANCE,
+    });
+    const targets = [0, 1].map(
+      () =>
+        new THREE.WebGLRenderTarget(fit.width, fit.height, {
+          type: THREE.HalfFloatType,
+          samples: 4,
+          // Cards are minified once the array is seen as a whole.
+          generateMipmaps: true,
+          minFilter: THREE.LinearMipmapLinearFilter,
+          // Render targets keep the parameters set at creation.
+          anisotropy: Math.min(
+            this.quality.anisotropy,
+            this.renderer.capabilities.getMaxAnisotropy(),
+          ),
+        }),
+    );
+    const matrix = source.instanceMatrix;
+    const savedMatrix = matrix.array.slice(0, 16);
+    const savedTheme = themeAttribute.array[0];
+    const savedCounts = this.surfaceInstances.map((inst) => inst.count);
+    const savedFog = this.scene.fog;
+    const savedTarget = this.renderer.getRenderTarget();
+    const floorVisible = this.floor?.visible;
+    const identity = new THREE.Matrix4().elements;
+    // The modelled surfaces cast through ArchiveShadowCoverage only; give the
+    // bake the same single caster so a card keeps the shadow of its own body.
+    const shadow = this.shadowCoverage?.mesh;
+    const savedShadowCount = shadow?.count ?? 0;
+    const savedShadowMatrix = shadow?.instanceMatrix.array.slice(0, 16);
+
+    // Cache the light baseline before the bake removes the scene fog.
+    themeEnvironment(this.scene, this.renderer, this.themeAmount);
+    matrix.array.set(identity, 0);
+    matrix.needsUpdate = true;
+    for (const inst of this.surfaceInstances) {
+      inst.count = 1;
+      inst.visible = true;
+    }
+    if (this.floor) this.floor.visible = false;
+    if (shadow) {
+      shadow.instanceMatrix.array.set(identity, 0);
+      shadow.instanceMatrix.needsUpdate = true;
+      shadow.count = 1;
+    }
+    // The array fog is anchored to the live camera, which sits far behind the
+    // bake camera; a card inside its own projection must not be fogged.
+    this.scene.fog = null;
+    this.scene.updateMatrixWorld(true);
+    for (const theme of [0, 1]) {
+      themeEnvironment(this.scene, this.renderer, theme);
+      themeAttribute.array[0] = theme;
+      themeAttribute.needsUpdate = true;
+      // onAfterRender restores the coverage counter, which is empty here.
+      if (shadow) shadow.count = 1;
+      this.renderer.shadowMap.needsUpdate = true;
+      this.renderer.setRenderTarget(targets[theme]);
+      this.renderer.render(this.scene, fit.camera);
+    }
+    this.renderer.setRenderTarget(savedTarget);
+    themeEnvironment(this.scene, this.renderer, this.themeAmount);
+    this.scene.fog = savedFog;
+    if (this.floor && floorVisible !== undefined) this.floor.visible = floorVisible;
+    if (shadow && savedShadowMatrix) {
+      shadow.count = savedShadowCount;
+      shadow.instanceMatrix.array.set(savedShadowMatrix, 0);
+      shadow.instanceMatrix.needsUpdate = true;
+    }
+    this.renderer.shadowMap.needsUpdate = true;
+    matrix.array.set(savedMatrix, 0);
+    matrix.needsUpdate = true;
+    themeAttribute.array[0] = savedTheme;
+    themeAttribute.needsUpdate = true;
+    this.surfaceInstances.forEach((inst, index) => {
+      inst.count = savedCounts[index];
+    });
+
+    const material = createCardImpostorMaterial(
+      targets[0].texture,
+      targets[1].texture,
+      fit.projector,
+    );
+    fit.geometry.setAttribute("archiveTheme", themeAttribute);
+    const impostor = new THREE.InstancedMesh(
+      fit.geometry,
+      material,
+      this.instanceCapacity,
+    );
+    impostor.instanceMatrix = matrix;
+    impostor.name = "archive-impostor";
+    impostor.castShadow = false;
+    impostor.receiveShadow = false;
+    impostor.frustumCulled = false;
+    impostor.visible = false;
+    this.scene.add(impostor);
+    this.impostor = impostor;
+    this.impostorTargets = targets;
+    this.instances = [impostor, ...this.surfaceInstances];
   }
 
   private assemblyTemplate?: Promise<THREE.Group>;
@@ -888,8 +1053,12 @@ export class ArchiveScene {
       (-(y - r.top) / r.height) * 2 + 1,
     );
     this.raycaster.setFromCamera(this.cursor, this.camera);
+    const cards: THREE.Object3D[] =
+      this.impostor && this.impostor.visible
+        ? [this.impostor]
+        : this.surfaceInstances;
     const hit = this.raycaster.intersectObjects(
-      [this.instances[0], this.model, ...this.outgoing.map((o) => o.group)],
+      [...cards, this.model, ...this.outgoing.map((o) => o.group)],
       true,
     )[0];
     if (!hit) return null;
@@ -1520,7 +1689,7 @@ export class ArchiveScene {
     const openingAspect = responsiveOpening ? this.container.clientWidth / this.container.clientHeight / (16 / 9) : 1;
     const openingSpan = (value: number) => value / Math.min(1, openingAspect);
     const distance = THREE.MathUtils.lerp(
-      THREE.MathUtils.lerp(28 + 7 * orbit, 140, settle),
+      THREE.MathUtils.lerp(28 + 7 * orbit, ARCHIVE_CAMERA_DISTANCE, settle),
       72,
       detail,
     );
@@ -1675,6 +1844,7 @@ export class ArchiveScene {
     // Build and compact the instance set only after the actual damped camera
     // is final for this frame. Picking uses the same packed index-to-cell map.
     const fixed = (Boolean(cinematic) || !this.looping) && !responsiveOpening;
+    this.syncInstanceVisibility(Boolean(cinematic));
     this.cells = fixed ? Array.from({ length: 160 }, (_, i) => poolCell(i))
       : this.visibility.update(this.camera, fog.far, trackX, entryZ + this.rail.value, this.extraCoverage);
     const hidden = new Set(this.outgoing.map(o => cellKey(o.cell)));
@@ -1779,6 +1949,14 @@ export class ArchiveScene {
         object.modelViewMatrix.multiplyMatrices(this.camera.matrixWorldInverse, object.matrixWorld);
         object.normalMatrix.getNormalMatrix(object.modelViewMatrix);
         state.floats(...object.modelViewMatrix.elements, ...object.normalMatrix.elements, ...object.matrixWorld.elements);
+        // Baked cards carry their whole response in the projected map pair;
+        // the instanced theme buffer below is their only animated input.
+        if ((object.material as THREE.ShaderMaterial).isShaderMaterial) {
+          state.add(object.geometry.id, object.material.uuid);
+          if (object instanceof THREE.InstancedMesh)
+            state.add(object.count, object.instanceMatrix.version, this.themeAttribute?.version ?? 0);
+          return;
+        }
         const mat = object.material as THREE.MeshPhysicalMaterial;
         // Three increments material.version for its own double-sided transmission
         // passes. Track application-controlled inputs, not that render-side counter.

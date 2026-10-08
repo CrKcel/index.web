@@ -37,6 +37,7 @@
 ```sh
 node scripts/check-motion.mjs
 node scripts/check-loop.mjs
+node scripts/check-archive-impostor.mjs
 node scripts/check-appearance.mjs
 node scripts/check-assembly.mjs
 node scripts/check-decryption.mjs
