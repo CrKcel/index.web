@@ -9,8 +9,6 @@
 [data-layout="opening"][data-opening-portrait="true"] .scan > span { font-size: 52px !important; letter-spacing: 1px !important; }
 [data-layout="opening"] .archive-callout { left: 50.520833%; width: 49.479167%; }
 [data-layout="opening"] .file-title { font-size: clamp(22px, 2vw, 32px); }
-[data-mobile-boot="true"] [data-layout="opening"] .powered { left: var(--edge); right: auto; bottom: 50px; }
-.mobile-entry { display: none; }
 .system-nav .settings-button { position: relative; }
 .settings-label { position: absolute; left: 50%; top: calc(100% + 3px); transform: translateX(-50%); font-size: 10px; white-space: nowrap; letter-spacing: 1px; }
 .pwa-update-notice { position: absolute; z-index: 12; right: var(--edge); bottom: var(--bottom-edge, 32px); max-width: calc(100% - 2 * var(--edge)); min-height: 44px; display: flex; align-items: center; gap: 20px; padding: 0 16px; background: #30362a; color: #f1efdf; font-size: 12px; }
@@ -23,8 +21,28 @@
 .pwa-actions:empty { display: none; }
 .pwa-actions button { min-height: 44px; border-bottom: 1px solid #8e897b; font-size: 12px; }
 @media (display-mode: standalone) { body { overscroll-behavior: none; } }
-[data-mobile-boot="true"] > .mobile-entry { display: flex; position: absolute; bottom: max(28px, env(safe-area-inset-bottom)); right: max(24px, env(safe-area-inset-right)); align-items: center; gap: 32px; min-height: 48px; padding: 0 16px; font-size: 14px; border-bottom: 1px solid #8e897b; }
-[data-mobile-boot="true"] .skip { display: none; }
+/* One entry button on every width. The opening film is scaled to the display,
+   so on narrow screens the shared ENTER SYSTEM control is scaled back about its
+   own corner: it keeps real CSS pixel sizes and stays tappable while the film
+   behind it stays in reference coordinates. The corner itself stays at the
+   authored height; only a notch inset can push it further down. */
+[data-mobile-boot="true"] [data-layout="opening"] .skip {
+  --skip-inverse-scale: var(--stage-inverse-scale, 1);
+  top: max(var(--skip-top), calc(env(safe-area-inset-top) * var(--skip-inverse-scale)));
+  right: calc(max(24px, env(safe-area-inset-right)) * var(--skip-inverse-scale));
+  min-height: 44px;
+  padding: 0 4px;
+  font-size: 14px;
+  transform: scale(var(--skip-inverse-scale));
+  transform-origin: top right;
+}
+/* Keyboard focus draws the same amber box as the rest of the terminal, at full
+   strength: the resting .skip is dimmed to 55%, which would wash the ring out. */
+[data-mobile-boot="true"] [data-layout="opening"] .skip:focus-visible {
+  opacity: 1;
+  outline: 2px solid #a67d48;
+  outline-offset: 7px;
+}
 .three-scene canvas { touch-action: none; }
 [data-layout="desktop"] .archive-callout { left: 50.520833%; width: 49.479167%; }
 [data-layout="desktop"] .file-summary { width: min(652px, calc(100% - 117px)); gap: 20px; }

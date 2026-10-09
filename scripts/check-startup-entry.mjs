@@ -59,7 +59,6 @@ try {
     assert.ok(Math.abs(held.bootTime-HOLD_BOOT_TIME)<0.3,`The opening holds on the welcome card (${held.bootTime})`);
     assert.equal(await page.locator('#stage').getAttribute('data-boot'),'welcome');
     assert.equal(await page.locator('#skip').getAttribute('aria-disabled'),'true');
-    assert.equal(await page.locator('.mobile-entry').getAttribute('aria-disabled'),'true');
     assert.equal(await page.locator('.welcome-status').evaluate(el=>getComputedStyle(el).opacity),'1','The loading status is on screen');
     await page.screenshot({path:resolve(output,'opening-hold.png')});
     // Entering the array early is refused by pointer and by keyboard.
@@ -90,17 +89,17 @@ try {
     const open=await gateArchive(page);
     await page.goto(base,{waitUntil:'domcontentloaded'});
     await page.waitForFunction(()=>window.rhine?.stats()?.hold,null,{timeout:60000});
-    assert.equal(await page.locator('.mobile-entry').getAttribute('aria-disabled'),'true');
-    await page.locator('.mobile-entry').click({force:true});
+    assert.equal(await page.locator('#skip').getAttribute('aria-disabled'),'true');
+    await page.locator('#skip').click({force:true});
     await page.waitForTimeout(300);
-    assert.equal((await stats(page)).mode,'boot','The phone entry button waits for the archive');
+    assert.equal((await stats(page)).mode,'boot','The narrow entry button waits for the archive');
     await page.screenshot({path:resolve(output,'opening-hold-portrait.png')});
     open();
     await page.waitForFunction(()=>window.rhine.stats().ready,null,{timeout:120000});
-    await page.locator('.mobile-entry').click();
+    await page.locator('#skip').click();
     await page.waitForTimeout(400);
-    assert.equal((await stats(page)).mode,'archive','The phone entry button enters the array');
-    report.checks.push({name:'Portrait entry is gated the same way'});await context.close();
+    assert.equal((await stats(page)).mode,'archive','The narrow entry button enters the array');
+    report.checks.push({name:'Narrow entry is gated the same way'});await context.close();
   }
   {
     const {context,page}=await fresh({}, {sound:false,music:false,motion:{preset:'reduced'}});

@@ -1,8 +1,7 @@
 /* The opening animation is the loading screen: it starts with the page, holds
    its welcome frame while the archive streams in, and only then lets the entry
    button hand over to the array. Everything here belongs to that window. */
-[data-boot-hold="true"] .skip,
-[data-boot-hold="true"] > .mobile-entry {
+[data-boot-hold="true"] .skip {
   opacity: 0.4;
   pointer-events: none;
 }

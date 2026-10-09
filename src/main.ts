@@ -80,7 +80,6 @@ $("#boot-background").insertAdjacentHTML(
   '<div class="boot-white"></div>',
 );
 const bootSequence = new BootSequence($("#stage"));
-$("#viewport").insertAdjacentHTML("beforeend", '<button class="mobile-entry" data-action="skip">进入档案 <span>→</span></button>');
 
 type Mode = "boot" | "archive" | "detail";
 let mode: Mode = "boot",
@@ -629,16 +628,15 @@ const controlsHost: ControlsHost = {
 bindControls(controlsHost);
 
 /** Pins or releases the welcome hold and publishes the state for the styles and
- *  the entry buttons; the terminal must not look interactive before the array
+ *  the entry button; the terminal must not look interactive before the array
  *  it would enter actually exists. */
 function setBootHold(held: boolean) {
   if (held === bootHeld) return;
   bootHeld = held;
   $("#viewport").dataset.bootHold = String(held);
-  for (const button of [$("#skip"), $(".mobile-entry")]) {
-    button.setAttribute("aria-disabled", String(held));
-    button.inert = held;
-  }
+  const skip = $("#skip");
+  skip.setAttribute("aria-disabled", String(held));
+  skip.inert = held;
 }
 
 /** The opening clock in app seconds. While the archive streams in, the clock

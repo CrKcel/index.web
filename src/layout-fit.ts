@@ -35,6 +35,13 @@ export function fitLayout(host: FitHost) {
   stage.dataset.touch = String(host.coarse);
   viewport.dataset.mobileBoot = String(mode === "boot" && (host.coarse || viewport.clientWidth < 1100));
   stage.style.setProperty("--stage-scale", String(scale));
+  // Real-pixel controls inside the scaled stage multiply by this instead of
+  // dividing by --stage-scale: engines disagree about calc() division by a
+  // custom property, while multiplication is already used across the styles.
+  stage.style.setProperty(
+    "--stage-inverse-scale",
+    String(scale > 0 ? 1 / scale : 1),
+  );
   stage.style.setProperty("--opening-width", `${width}px`);
   stage.style.setProperty("--opening-height", `${height}px`);
   stage.style.setProperty("--opening-scan-scale", String(Math.min(1, width / 1920)));
