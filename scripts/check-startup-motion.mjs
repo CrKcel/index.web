@@ -12,8 +12,6 @@ try {for(const browserMotion of ['no-preference','reduce']) {
  const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
  const loaded=async()=>{
    await page.waitForFunction(()=>window.rhine?.stats().ready);
-   if(await page.locator('.entry-start').count())await page.locator('.entry-start').click();
-   await page.waitForFunction(()=>!document.querySelector('#loading'));
  };
  await page.goto(process.env.REVIEW_URL || 'http://127.0.0.1:5190/');await loaded();
  let state=await page.evaluate(()=>window.rhine.stats());

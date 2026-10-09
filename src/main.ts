@@ -38,7 +38,6 @@ import {
   reducedMotion,
   type MotionKey,
 } from "./motion-preferences";
-import { StartupGate } from "./startup";
 import "./startup.css";
 import { isColorTheme, resolveDarkTheme } from "./color-theme";
 import { paintTheme } from "./theme-ui";
@@ -72,6 +71,9 @@ const $ = <T extends HTMLElement = HTMLElement>(selector: string) =>
   document.querySelector<T>(selector)!;
 
 $("#stage").innerHTML = stageMarkup;
+// The stage is a calibrated 1920 x 1080 box scaled to the window, so anything
+// that has to stay legible on a phone lives beside it in the real viewport.
+$("#viewport").append($("#boot-error"));
 
 $("#boot-background").insertAdjacentHTML(
   "beforeend",
@@ -127,7 +129,7 @@ const darkTheme = () => resolveDarkTheme(prefs.colorTheme);
 paintTheme(darkTheme() ? 1 : 0);
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
   if (prefs.colorTheme !== "system") return;
-  if (scene) scene.setTheme(darkTheme(), !motionActive("surfaceTransitions") || !started);
+  if (scene) scene.setTheme(darkTheme(), !motionActive("surfaceTransitions"));
   else paintTheme(darkTheme() ? 1 : 0);
 });
 const {
@@ -148,23 +150,10 @@ let musicSuppressed = false;
 function configureAudio() { audio.configure({ ...prefs, music: prefs.music && !musicSuppressed }); }
 configureAudio();
 const reviewEntry = reviewParams.has("scene") || reviewParams.has("time") || reviewParams.get("review") === "1";
-let started = false;
-const loading = $("#loading");
-// The entry screen uses the actual viewport, including portrait phones; the
-// reference animation still uses its calibrated 1920 x 1080 stage.
-$("#viewport").append(loading);
-$("#stage").inert = true;
-$(".mobile-entry").inert = true;
-const entry = !reviewEntry && (prefs.sound || prefs.music) ? new StartupGate({
-  root: loading,
-  unlock: () => audio.unlock(),
-  cancel: () => audio.cancelEntry(),
-  start: silent => completeStartup(silent),
-}) : undefined;
-if (entry) {
-  audio.holdForEntry();
-  if (prefs.music) void audio.prepareMusic().catch(() => { /* Entry offers retry. */ });
-}
+// The opening holds on its composed welcome card until the archive exists; the
+// reference reviews drive their own clock and never wait on this one.
+const WELCOME_HOLD = 20.6;
+let bootHeld = false;
 let audioPreview = false, audioPreviewRequest = 0;
 let scene: ArchiveScene | undefined;
 let viewer: ModelViewer | undefined;
@@ -191,7 +180,7 @@ function savePrefs() {
     bookmarkFeedback?.cancel();
   }
   scene?.setMotion(prefs.motion);
-  scene?.setTheme(darkTheme(), !motionActive("surfaceTransitions") || !started);
+  scene?.setTheme(darkTheme(), !motionActive("surfaceTransitions"));
   document.querySelectorAll<HTMLElement>("[data-color-theme]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.colorTheme === prefs.colorTheme)));
   scene?.setQuality(prefs.rendering);
   viewer?.setQuality(prefs.rendering);
@@ -537,7 +526,7 @@ function renderResults() {
 
 // The event layer routes DOM events to these actions; see src/controls.ts.
 const controlsHost: ControlsHost = {
-  started: () => started,
+  started: () => true,
   ready: () => ready,
   mode: () => mode,
   modal: () => modal,
@@ -639,8 +628,46 @@ const controlsHost: ControlsHost = {
 };
 bindControls(controlsHost);
 
+/** Pins or releases the welcome hold and publishes the state for the styles and
+ *  the entry buttons; the terminal must not look interactive before the array
+ *  it would enter actually exists. */
+function setBootHold(held: boolean) {
+  if (held === bootHeld) return;
+  bootHeld = held;
+  $("#viewport").dataset.bootHold = String(held);
+  for (const button of [$("#skip"), $(".mobile-entry")]) {
+    button.setAttribute("aria-disabled", String(held));
+    button.inert = held;
+  }
+}
+
+/** The opening clock in app seconds. While the archive streams in, the clock
+ *  stops on the composed welcome card instead of running past it, so the rest
+ *  of the opening resumes from there once the scene is ready. */
+function bootClock(time: number) {
+  if (frozenTime !== null) {
+    setBootHold(false);
+    return frozenTime;
+  }
+  const elapsed = time - bootStart;
+  // With the opening switched off, the composed card is a still loading screen
+  // rather than a timeline that would replay the animation the reader disabled.
+  if (!motionActive("boot") && !ready && !reviewEntry) {
+    bootStart = time - WELCOME_HOLD;
+    setBootHold(true);
+    return WELCOME_HOLD;
+  }
+  if (ready || reviewEntry || elapsed <= WELCOME_HOLD) {
+    setBootHold(false);
+    return elapsed;
+  }
+  bootStart = time - WELCOME_HOLD;
+  setBootHold(true);
+  return WELCOME_HOLD;
+}
+
 function bootFrame(t: number) {
-  audio.updateBoot(t, frozenTime !== null);
+  audio.updateBoot(t, frozenTime !== null || bootHeld);
   const step = bootStep(t, bootSequence.update(t).step);
   if (step !== lastStep) {
     $("#stage").dataset.boot = step;
@@ -649,7 +676,7 @@ function bootFrame(t: number) {
   $(".file-title").firstChild!.textContent = bootTitle(t, step);
   $("#stage").style.setProperty("--entry-opacity", String(bootEntryOpacity(t)));
   $(".callout-rule").style.transform = `scaleX(${bootRuleScale(t)})`;
-  if (t >= OPENING_END) {
+  if (t >= OPENING_END && scene) {
     setMode("detail");
     return undefined;
   }
@@ -669,10 +696,7 @@ function frame(ms: number) {
   const theme = scene?.themeAmount ?? (darkTheme() ? 1 : 0);
   paintTheme(theme);
   viewer?.setTheme(theme);
-  const cinema =
-    mode === "boot" && ready
-      ? bootFrame(frozenTime ?? time - bootStart)
-      : undefined;
+  const cinema = mode === "boot" ? bootFrame(bootClock(time)) : undefined;
   // The calibrated 2D opening fully covers the scene until array entry.
   if (!viewer?.isOpen && (!cinema || cinema.time >= 21.9)) scene?.update(time, cinema);
   viewer?.update(time);
@@ -743,56 +767,35 @@ async function start() {
     scene.setTheme(darkTheme(), true);
     await scene?.load();
     if (scene) bindScene(scene);
+    scene?.setMode("hidden");
     savePrefs();
     ready = true;
     select(0);
-    if (entry) entry.ready();
-    else {
-      completeStartup(false);
-    }
+    // The reference shortcuts hand the terminal straight to their mode; the
+    // normal path only leaves the opening when the reader asks for the array.
+    if (reviewParams.get("scene") === "archive" || (!motionActive("boot") && !reviewParams.has("time"))) setMode("archive");
+    if (reviewParams.get("scene") === "detail") setMode("detail");
   } catch (error) {
     console.error(error);
-    $("#loading").innerHTML =
-      '<div class="error-state"><strong>CONNECTION INTERRUPTED</strong><p>三维档案资源未能载入。请确认浏览器已启用硬件加速，然后重新连接。</p><button onclick="location.reload()">RECONNECT →</button></div>';
+    setBootHold(false);
+    $("#boot-error").hidden = false;
+  } finally {
+    // Do not compete with the archive download the opening is waiting on. The
+    // full offline installation starts once the terminal has its resources.
+    setTimeout(() => void initPwa(notify), 1500);
   }
-}
-function completeStartup(silent: boolean) {
-  if (started || !ready) return;
-  started = true;
-  if (silent) {
-    prefs.sound = false;
-    prefs.music = false;
-    saveAudioPrefs();
-  }
-  audio.releaseEntry();
-  audio.restartBoot();
-  const fade = motionActive("boot") ? 600 : 0;
-  bootStart = performance.now() / 1000 - (reviewParams.has("time") ? Number(reviewParams.get("time")) : 1.76);
-  if (!reviewParams.has("time")) bootStart += fade / 1000;
-  setMode("boot");
-  if (reviewParams.get("scene") === "archive" || (!motionActive("boot") && !reviewParams.has("time"))) setMode("archive");
-  if (reviewParams.get("scene") === "detail") setMode("detail");
-  $("#stage").inert = false;
-  $(".mobile-entry").inert = false;
-  loading.classList.add("loaded");
-  loading.inert = true;
-  setTimeout(() => {
-    const restoreFocus = loading.contains(document.activeElement) || document.activeElement === document.body;
-    loading.remove();
-    if (entry && restoreFocus) {
-      const skip = $("#skip");
-      const target = mode === "boot" ? skip.getClientRects().length ? skip : $(".mobile-entry") : $(".read-file");
-      target.focus({ preventScroll: true });
-    }
-  }, fade);
-  requestAnimationFrame(frame);
-  // Do not compete with entry audio/font downloads. Full offline installation
-  // begins after startup is complete and remains atomic.
-  setTimeout(() => void initPwa(notify), 1500);
 }
 updateSelection();
+// The page opens itself: the calibrated opening starts on the first frame while
+// the archive model and the score stream in behind it. Nothing here waits for
+// audio, and the opening clock only waits for the scene.
+bootStart = performance.now() / 1000 - (reviewParams.has("time") ? Number(reviewParams.get("time")) : 1.76);
+audio.restartBoot();
+setMode("boot");
+$("#boot-error").querySelector("button")!.addEventListener("click", () => location.reload());
+if (prefs.music) void audio.prepareMusic().catch(() => { /* Playback retries on the next activation. */ });
+requestAnimationFrame(frame);
 void start();
-// Deterministic review controls: the running application, never a video surrogate.
 // Deterministic review controls: the running application, never a video surrogate.
 installReviewApi({
   ready: () => ready,
@@ -801,9 +804,10 @@ installReviewApi({
     fps: Math.round(fps),
     mode,
     ready,
-    startup: started ? "started" : entry?.phase ?? "loading",
+    hold: bootHeld,
+    startup: ready ? "started" : "loading",
     motion: { reduced: motionIsReduced(), preset: prefs.motionPreset },
-    bootTime: mode === "boot" ? started ? (frozenTime ?? performance.now() / 1000 - bootStart) + 5 : 6.76 : null,
+    bootTime: mode === "boot" ? (frozenTime ?? performance.now() / 1000 - bootStart) + 5 : null,
     selected: records[selected].id,
     saved: [...saved],
     audio: audio.stats(),

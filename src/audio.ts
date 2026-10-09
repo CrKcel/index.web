@@ -40,7 +40,6 @@ export class TerminalAudio {
   private suspension: Promise<void> = Promise.resolve();
   private bootMix = -1;
   private playedKeys = 0;
-  private entryPending = false;
   private hostPaused = false;
   setHostPaused(paused: boolean) {
     this.hostPaused = paused;
@@ -55,26 +54,16 @@ export class TerminalAudio {
     window.addEventListener("pageshow", this.visibility);
   }
   private gesture = () => {
-    if (this.entryPending) return;
     this.unlocked = true;
     void this.activate();
   };
-  holdForEntry() {
-    this.entryPending = true;
-  }
-  releaseEntry() {
-    this.entryPending = false;
-  }
-  cancelEntry() {
-    this.hide();
-  }
   async unlock() {
     this.unlocked = true;
     await this.activate();
     return this.context?.state === "running" && (!this.prefs.music || this.music.loaded);
   }
-  // Fetch compressed tracks while the entry screen is visible; create/resume
-  // the audio device only from a real click or keyboard activation.
+  // Fetch compressed tracks during the opening so the score is ready by the
+  // time a real activation creates the device.
   prepareMusic() {
     return this.music.prepare();
   }
@@ -93,7 +82,7 @@ export class TerminalAudio {
   private visibility = () => {
     this.bootTime = null;
     if (document.hidden) this.hide();
-    else if (this.unlocked && !this.entryPending) void this.activate();
+    else if (this.unlocked) void this.activate();
   };
   configure(prefs: AudioPreferences) {
     this.prefs = {
@@ -118,7 +107,7 @@ export class TerminalAudio {
     if (!this.prefs.sound) this.stopEffects();
     if (!this.prefs.music) this.stopMusic();
     if (!this.prefs.sound && !this.prefs.music) this.hide();
-    else if (this.unlocked && !this.entryPending) void this.activate();
+    else if (this.unlocked) void this.activate();
   }
   private createContext() {
     const c = (this.context = new AudioContext()),

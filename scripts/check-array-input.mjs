@@ -48,7 +48,7 @@ try {
       `${process.env.REVIEW_URL || "http://127.0.0.1:5204"}/?scene=archive`,
     );
     await page.waitForFunction(
-      () => window.rhine?.stats().ready && !document.querySelector("#loading"),
+      () => window.rhine?.stats().ready,
       null,
       { timeout: 60000 },
     );

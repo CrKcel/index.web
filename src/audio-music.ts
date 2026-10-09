@@ -1,5 +1,5 @@
-// The three-stem score: compressed stems are fetched while the entry screen is
-// up, decoded only once a real activation created the audio device, and then
+// The three-stem score: compressed stems are fetched while the opening plays,
+// decoded only once a real activation created the audio device, and then
 // looped in lockstep. Everything here is Web Audio; the device lifetime, the
 // gesture gate and the effect bus stay in TerminalAudio, which owns the graph
 // this module connects into through MusicBus.

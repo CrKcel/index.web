@@ -11,9 +11,9 @@ export type ModalKind = "search" | "saved" | "settings";
 export type AppMode = "boot" | "archive" | "detail";
 
 export type ControlsHost = {
-  /** The page has finished loading and the terminal accepted input. */
+  /** The terminal is running and accepts input; the opening is not a gate. */
   started(): boolean;
-  /** The scene is loaded; keyboard shortcuts wait for it. */
+  /** The scene is loaded; the opening and every shortcut wait for it. */
   ready(): boolean;
   mode(): AppMode;
   modal(): ModalKind | null;
@@ -140,6 +140,9 @@ export function bindControls(host: ControlsHost) {
     const action = el.dataset.action;
     if (action === "sound-preview") host.play("confirm");
     if (action === "skip") {
+      // The opening holds on its welcome card until the array exists; entering
+      // it earlier would show an archive with nothing in it.
+      if (!host.ready()) return;
       host.setMode("archive");
       host.play("confirm");
     }

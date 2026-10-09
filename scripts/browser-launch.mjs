@@ -41,9 +41,9 @@ export async function launchChromium(chromium, options = {}) {
   }
 }
 
-// The terminal only shows its entry gate when it expects to play audio
-// (src/main.ts). Checks that do not exercise the gate itself seed silent
-// preferences so the array starts without a gesture, keeping motion enabled.
+// Checks that do not exercise startup audio seed silent preferences so no
+// gesture is needed to unlock a device. Motion stays on, because a silent
+// preference alone never switches the opening off.
 export async function seedPreferences(context, preferences) {
   await context.addInitScript((value) => {
     if (!localStorage.getItem("rhine-settings"))

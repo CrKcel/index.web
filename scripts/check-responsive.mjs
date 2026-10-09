@@ -32,11 +32,11 @@ async function touch(page,points){
 try{
 for(const [name,width,height,mobile] of cases.filter(([name])=>!process.env.REVIEW_CASES||process.env.REVIEW_CASES.split(',').includes(name))){
  const context=await browser.newContext({viewport:{width,height},hasTouch:mobile,isMobile:mobile,deviceScaleFactor:mobile?2:1});
- // Enter the archive without the audio entry gate, motion stays on.
+ // Enter the archive without opening an audio device; motion stays on.
  await seedPreferences(context,{sound:false,music:false});
  const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto(`${base}/?scene=archive`);
- await page.waitForFunction(()=>window.rhine?.stats().ready&&!document.querySelector('#loading'),null,{timeout:60000});
+ await page.waitForFunction(()=>window.rhine?.stats().ready,null,{timeout:60000});
  await page.waitForFunction(()=>window.rhine.stats().extraction>=.395,null,{timeout:60000});await page.waitForTimeout(300);
  const entry={name,viewport:{width,height},errors};report.push(entry);
  entry.archive=await inside(page,['.brand','.system-nav','.read-file','.archive-navigation','.column-navigation','.archive-counter'],width,height);
