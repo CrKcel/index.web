@@ -3,6 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- The module bundle paints the surface through inline custom properties,
+         but it runs long after the first frame. Resolving the stored choice here
+         keeps a dark-mode reader from seeing the light paper once. -->
+    <script data-theme-boot>
+      (() => {
+        let stored = null;
+        try {
+          stored = JSON.parse(localStorage.getItem("rhine-settings") ?? "null");
+        } catch {}
+        const chosen = stored?.colorTheme;
+        const choice = ["system", "light", "dark"].includes(chosen) ? chosen : "system";
+        if (!(choice === "dark" || (choice === "system" && matchMedia("(prefers-color-scheme: dark)").matches))) return;
+        const root = document.documentElement;
+        root.dataset.darkSurface = "true";
+        // The stylesheet answers with the dark palette, but until it lands (a
+        // dev server injects it from JavaScript) the first frame needs the dark
+        // paper of src/theme-palette.ts as a colour.
+        root.style.backgroundColor = "#11181b";
+      })();
+    </script>
     <meta name="theme-color" content="#e8e5e1" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />

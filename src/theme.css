@@ -1,3 +1,27 @@
+/* Surface palette endpoints. `paintTheme` (src/theme-ui.ts) interpolates
+   between them through inline custom properties, but the first frame belongs to
+   the head bootstrap in index.html, which only flips `data-dark-surface`; the
+   dark surface therefore has to be a complete stylesheet state on its own. The
+   two blocks and src/theme-palette.ts are kept in step by check-theme.mjs. */
+:root {
+  --theme-ink: #080a08; --theme-ink-rgb: 8, 10, 8;
+  --theme-muted: #77756d; --theme-muted-rgb: 119, 117, 109;
+  --theme-line: #aaa59a; --theme-line-rgb: 170, 165, 154;
+  --theme-paper: #eae5e1; --theme-paper-rgb: 234, 229, 225;
+  --theme-panel: #edebe4; --theme-panel-rgb: 237, 235, 228;
+  --theme-field: #e7e3d9; --theme-field-rgb: 231, 227, 217;
+  --theme-accent: #9b7247; --theme-accent-rgb: 155, 114, 71;
+}
+[data-dark-surface="true"] {
+  --theme-ink: #e0e3dc; --theme-ink-rgb: 224, 227, 220;
+  --theme-muted: #a6b0b1; --theme-muted-rgb: 166, 176, 177;
+  --theme-line: #536166; --theme-line-rgb: 83, 97, 102;
+  --theme-paper: #11181b; --theme-paper-rgb: 17, 24, 27;
+  --theme-panel: #202a2f; --theme-panel-rgb: 32, 42, 47;
+  --theme-field: #2a363b; --theme-field-rgb: 42, 54, 59;
+  --theme-accent: #c5a16b; --theme-accent-rgb: 197, 161, 107;
+}
+
 .theme-settings { padding: 16px 0; border-bottom: 1px solid #bdb8ad; display: flex; justify-content: space-between; align-items: center; gap: 20px; }
 .theme-settings strong { display: block; font-size: 14px; }
 .theme-choices { display: flex; gap: 6px; }

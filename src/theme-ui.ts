@@ -1,18 +1,16 @@
 import "./theme.css";
 import { colorThemes, ColorTheme } from "./color-theme";
-const palette = {
-  ink: ["#080a08", "#e0e3dc"], muted: ["#77756d", "#a6b0b1"], line: ["#aaa59a", "#536166"],
-  paper: ["#eae5e1", "#11181b"], panel: ["#edebe4", "#202a2f"], field: ["#e7e3d9", "#2a363b"],
-  accent: ["#9b7247", "#c5a16b"],
-} as const;
+import { themePalette as palette, themeRgb as rgb } from "./theme-palette";
 let previous = -1;
 export let themeAmount = 0;
-function rgb(hex: string) { return [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)); }
 export function paintTheme(amount: number) {
   if (Math.abs(amount - previous) < .0001) return;
   previous = themeAmount = amount;
   const root = document.documentElement;
   root.dataset.darkSurface = String(amount > .0001);
+  // The head bootstrap can only paint the resolved dark paper; the stylesheet
+  // and the interpolated variables below own the surface from the first frame on.
+  root.style.removeProperty("background-color");
   for (const [name, values] of Object.entries(palette)) {
     const from = rgb(values[0]), to = rgb(values[1]);
     const value = from.map((v, i) => Math.round(v + (to[i] - v) * amount)).join(", ");
