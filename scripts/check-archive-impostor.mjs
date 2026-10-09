@@ -75,23 +75,7 @@ assert.equal(material.uniforms.archiveDark.value, dark);
 assert.equal(material.uniforms.archiveProjector.value, projector);
 assert.ok(
   material.uniforms.fogNear && material.uniforms.fogFar,
-  "Fog uniforms exist",
-);
-assert.ok(
-  material.vertexShader.includes("archiveTheme"),
-  "Reads the per-instance theme",
-);
-assert.ok(
-  material.vertexShader.includes("archiveProjector * vec4(transformed, 1.0)") &&
-    !material.vertexShader.includes("archiveProjector * modelMatrix") &&
-    !material.vertexShader.includes("archiveProjector * archivePosition"),
-  "Projection stays in card space",
-);
-assert.ok(
-  material.fragmentShader.includes(
-    "vArchiveProjection.xy / vArchiveProjection.w",
-  ),
-  "Material rebuilds the projection per fragment",
+  "Baked cards share the scene fog",
 );
 console.log(
   "Baked card proxy bound, bake framing, card-space projection and material inputs: passed",

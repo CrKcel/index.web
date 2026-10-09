@@ -1,15 +1,17 @@
 // Preserve an earlier production dist, then set PWA_PREVIOUS_DIST to its path.
+import { loadPlaywright } from './playwright.mjs';
+import { launchChromium, browserChannel } from './browser-launch.mjs';
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {readFile, writeFile, mkdir} from 'node:fs/promises';
 import {resolve, extname, sep} from 'node:path';
-import {pathToFileURL} from 'node:url';
-const {chromium}=await import(process.env.PLAYWRIGHT_MODULE?pathToFileURL(resolve(process.env.PLAYWRIGHT_MODULE)).href:'playwright');
+const {chromium} = await loadPlaywright();
 if(!process.env.PWA_PREVIOUS_DIST) throw Error('Set PWA_PREVIOUS_DIST to an earlier built release.');
 const oldRoot=resolve(process.env.PWA_PREVIOUS_DIST),newRoot=resolve('dist');
 const metadata=JSON.parse(await readFile(resolve(newRoot,'pwa-build.json'),'utf8'));
+const previous=JSON.parse(await readFile(resolve(oldRoot,'pwa-build.json'),'utf8'));
 let deployed=false,broken=false;
-const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.webmanifest':'application/manifest+json','.svg':'image/svg+xml','.png':'image/png','.woff2':'font/woff2','.txt':'text/plain','.glb':'model/gltf-binary','.ogg':'audio/ogg'};
+const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.webmanifest':'application/manifest+json','.svg':'image/svg+xml','.png':'image/png','.txt':'text/plain','.glb':'model/gltf-binary','.ogg':'audio/ogg'};
 const server=createServer(async(req,res)=>{try {
  const root=deployed?newRoot:oldRoot,url=new URL(req.url,'http://localhost');
  const path=decodeURIComponent(url.pathname==='/'?'/index.html':url.pathname),file=resolve(root,'.'+path);
@@ -20,8 +22,8 @@ const server=createServer(async(req,res)=>{try {
  res.writeHead(200,{'Content-Type':mime[extname(file)]||'application/octet-stream','Cache-Control':'no-cache'}).end(body);
 }catch{res.writeHead(404).end()}});
 await new Promise(r=>server.listen(5192,'127.0.0.1',r));
-const channel=process.env.REVIEW_CHANNEL||'chrome';
-const browser=await chromium.launch({channel,headless:true,args:['--use-angle=d3d11','--enable-gpu','--ignore-gpu-blocklist']});
+const channel=browserChannel();
+const browser=await launchChromium(chromium);
 const report={channel,version:browser.version(),release:metadata.version,checks:[],errors:[]};
 try {
  const context=await browser.newContext({viewport:{width:1440,height:900}});
@@ -29,19 +31,24 @@ try {
  const page=await context.newPage();page.on('pageerror',e=>report.errors.push(e.message));
  const ready=()=>page.waitForFunction(()=>window.rhine?.stats().ready&&document.documentElement.dataset.offlineReady==='true'&&navigator.serviceWorker.controller&&!document.querySelector('#loading'),null,{timeout:90000});
  const base='http://127.0.0.1:5192/';
- await page.goto(base);await ready();assert.equal(await page.locator('.settings-label').count(),0);
+ // The service worker names its cache after the release it precached, so this is
+ // how the test tells which build the browser is actually running.
+ const releaseCaches=()=>page.evaluate(async()=>{const keys=await caches.keys();return keys.filter(k=>k.startsWith('rhine-lab:')).map(k=>k.split(':').pop())});
+ await page.goto(base);await ready();
+ assert.ok((await releaseCaches()).includes(previous.version),'The previous release is active');
  await page.evaluate(()=>localStorage.setItem('rhine-saved','["X-001"]'));
  deployed=true;
  const cdp=await context.newCDPSession(page);await cdp.send('Network.clearBrowserCache');await cdp.detach();
  await page.reload();await ready();
  await page.waitForFunction(async()=>Boolean((await navigator.serviceWorker.getRegistration())?.waiting),null,{timeout:90000});
- assert.equal(await page.locator('.settings-label').count(),0);
+ assert.ok((await releaseCaches()).includes(previous.version),'Clearing the HTTP cache keeps the previous release');
  report.checks.push('clearing HTTP cache and reloading still serves the previous service-worker release');
  await page.goto(base+'update.html');await page.getByRole('button',{name:'更新并返回'}).click();
- await page.waitForURL(base);await ready();assert.equal(await page.locator('.settings-label').textContent(),'设置');
- assert.ok((await page.evaluate(()=>caches.keys())).some(k=>k.endsWith(metadata.version)));
+ await page.waitForURL(base);await ready();
+ const recovered=await releaseCaches();
+ assert.ok(recovered.includes(metadata.version)&&recovered.length===1,'Recovery activates exactly the new release');
  assert.equal(await page.evaluate(()=>localStorage.getItem('rhine-saved')),'["X-001"]');
- assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('rhine-settings')).reduced),true);
+ assert.equal(await page.evaluate(()=>window.rhine.stats().motion.reduced),true);
  report.checks.push('network recovery replaces the old page and preserves bookmarks and motion preference');
  broken=true;
  await page.goto(base+'update.html');await page.getByRole('button',{name:'更新并返回'}).click();
@@ -49,7 +56,8 @@ try {
  assert.equal(new URL(page.url()).pathname,'/update.html');assert.equal(await page.locator('#update').isEnabled(),true);
  report.checks.push('failed recovery download reports failure and retains the previous release');broken=false;
  await page.goto(base);await ready();
- await context.setOffline(true);await page.reload();await ready();assert.equal(await page.locator('.settings-label').textContent(),'设置');
+ await context.setOffline(true);await page.reload();await ready();
+ assert.ok((await releaseCaches()).includes(metadata.version));
  report.checks.push('recovered release works after offline reload');await context.close();
  const fresh=await browser.newContext();const freshPage=await fresh.newPage();
  await freshPage.goto(base+'update.html');await freshPage.getByRole('button',{name:'更新并返回'}).click();await freshPage.waitForURL(base,{timeout:90000});

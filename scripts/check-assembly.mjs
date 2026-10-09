@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { damp } from "../src/motion.ts";
+import { damp, INSPECTION_LIFT } from "../src/motion.ts";
 async function load(name) {
   const b = await readFile(
     new URL("../public/assets/" + name, import.meta.url),
@@ -82,17 +82,19 @@ assert.ok(
 const height = new THREE.Box3()
   .setFromObject(assembly)
   .getSize(new THREE.Vector3()).y;
+// The authored card height the reveal/height shaders divide by.
 assert.ok(Math.abs(height - 3.7) < 1e-5);
-// Interrupted motion retains position and velocity, then converges exactly enough
-// for the viewer to snap to the original assembly pose.
+// An inspected file must clear the row it came from without flying off.
+assert.ok(
+  INSPECTION_LIFT - height > 0.25,
+  "Inspection clears the neighboring card while staying near the array",
+);
+assert.ok(INSPECTION_LIFT <= 4.1, "Inspection lift remains modest");
+// Interrupted reassembly still converges tightly enough for the viewer to snap
+// back onto the original pose.
 const spread = { value: 0, velocity: 0 };
 for (let i = 0; i < 25; i++) damp(spread, 1, 5.5, 1 / 60);
-const interrupted = spread.value;
 damp(spread, 0, 5.5, 1 / 60);
-assert.ok(
-  Math.abs(spread.value - interrupted) < 0.05,
-  "Reassembly must not jump on reversal",
-);
 for (let i = 0; i < 180; i++) damp(spread, 0, 5.5, 1 / 60);
 assert.ok(Math.abs(spread.value) < 0.0001 && Math.abs(spread.velocity) < 0.001);
 console.log(

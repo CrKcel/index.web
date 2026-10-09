@@ -4,14 +4,17 @@
   "license": "MIT",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "postinstall": "node scripts/patch-rolling-number.mjs",
     "predev": "node scripts/patch-rolling-number.mjs && node scripts/validate-content.mjs",
     "dev": "vite --host 127.0.0.1",
     "prebuild": "node scripts/patch-rolling-number.mjs && node scripts/validate-content.mjs",
+    "check": "node scripts/check.mjs",
     "check:content": "node --import ./scripts/type-import-loader.mjs --experimental-strip-types --test scripts/check-content.mjs",
-    "check:viewport": "node --import ./scripts/type-import-loader.mjs --experimental-strip-types scripts/check-viewport.mjs",
-    "check:behavior": "node --import ./scripts/type-import-loader.mjs scripts/check-motion.mjs && node --import ./scripts/type-import-loader.mjs scripts/check-loop.mjs && node --import ./scripts/type-import-loader.mjs scripts/check-archive-impostor.mjs && node --import ./scripts/type-import-loader.mjs scripts/check-appearance.mjs && node --import ./scripts/type-import-loader.mjs scripts/check-assembly.mjs && node --import ./scripts/type-import-loader.mjs scripts/check-decryption.mjs && node --import ./scripts/type-import-loader.mjs scripts/check-shell.mjs && node --import ./scripts/type-import-loader.mjs scripts/check-quality.mjs && node --import ./scripts/type-import-loader.mjs --test scripts/check-pr15-port.mjs",
+    "check:browser": "node scripts/check.mjs browser",
     "build": "tsc && vite build && node scripts/build-pwa.mjs",
     "build:worker": "npm run build && node scripts/package-cloudflare.mjs",
     "deploy": "npm run build:worker && wrangler deploy",

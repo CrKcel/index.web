@@ -1,0 +1,21 @@
+name: checks
+
+# The offline gate: content rules, source-level invariants and the release build.
+# The real-browser regressions (npm run check:browser) are deliberately not part
+# of this workflow because they need a Playwright install and a running server.
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build:worker

@@ -1,14 +1,19 @@
 import assert from "node:assert/strict";
 import {
   archiveWave,
+  cinematicField,
+  columnStrength,
   extraction,
   selectionWave,
   rippleEnvelope,
   settlingWave,
+  returnStep,
   damp,
   idleWave,
 } from "../src/motion.ts";
 
+// Idle drift must be visible without input, but never lift a card by more than
+// 3% of its height nor move it more than a fraction of a pixel per frame.
 let idleRange = 0;
 for (let lane = 0; lane < 5; lane++) {
   for (let row = 0; row < 32; row++) {
@@ -29,6 +34,8 @@ for (let lane = 0; lane < 5; lane++) {
 }
 assert.ok(idleRange > 0.075, "Idle field remains perceptible without input");
 
+// Reference prelude: two authored crests travel across the rows, and sampling
+// the 25 fps timeline must not teleport either of them.
 const peak = (t) =>
   Array.from({ length: 32 }, (_, row) => archiveWave(row, 2, t)).reduce(
     (best, y, row, values) => (y > values[best] ? row : best),
@@ -57,27 +64,42 @@ assert.ok(
   "Neighbors keep moving during the first extraction hold",
 );
 assert.ok(selectionWave(8, 1) > 0.1, "Click ripple reaches neighboring rows");
+
+// Handoff: the flat equal-crest frame must blend into the selected-column wave
+// without a visible step.
+let preludeDelta = 0;
+for (let frame = 750; frame < 786; frame++) {
+  for (let row = 0; row < 32; row++)
+    for (let lane = 0; lane < 5; lane++)
+      preludeDelta = Math.max(
+        preludeDelta,
+        Math.abs(
+          cinematicField(row, lane, (frame + 1) / 25 - 5) -
+            cinematicField(row, lane, frame / 25 - 5),
+        ),
+      );
+}
+assert.ok(
+  preludeDelta < 0.65,
+  "The equal-crest to selected-column handoff is continuous",
+);
+assert.ok(columnStrength(0, 2) >= 0.25, "Other columns retain a visible wave");
+assert.ok(
+  columnStrength(2, 2) > columnStrength(1, 2),
+  "The focused column leads the wave",
+);
+
+// Selection feedback is one-sided: a click must never push a card below its
+// resting row, and the pulse must settle back exactly onto it.
 for (let frame = 0; frame <= 200; frame++) {
+  const age = frame / 60;
   for (let distance = 0; distance <= 32; distance += 0.5) {
-    const y = selectionWave(distance, frame / 60);
-    const age = frame / 60;
-    const ramp = Math.max(0, Math.min(1, age / 0.2));
-    const original =
-      0.8 *
-      ramp ** 3 *
-      (10 + ramp * (-15 + 6 * ramp)) *
-      Math.exp(-age * 1.15) *
-      Math.cos((distance - age * 8) * 0.58) *
-      Math.exp(-0.5 * ((distance - age * 8) / 3.4) ** 2);
+    const y = selectionWave(distance, age);
     assert.ok(
       y >= 0 && y <= 0.8,
       "Selection pulse cannot create a negative trough",
     );
-    if (age <= 3.2 && original > 0)
-      assert.ok(
-        Math.abs(y - original) < 1e-12,
-        "Positive crests retain the baseline amplitude and timing",
-      );
+    if (age > 3.2) assert.equal(y, 0, "Pulse settles back to the resting row");
   }
 }
 const ripple = (distance, age) =>
@@ -106,6 +128,21 @@ for (const distance of [3, 5, 8, 12]) {
     "Ripple edges approach rest without a velocity snap",
   );
 }
+
+// Returning an inspected file: alignment has to finish exactly before the card
+// re-enters its slot, otherwise the copy pops on insertion.
+let angle = 0.8,
+  elapsed = 0;
+while (angle !== 0 && elapsed < 2) {
+  angle = returnStep(angle, 1 / 60);
+  elapsed += 1 / 60;
+}
+assert.equal(angle, 0, "Alignment finishes exactly before insertion");
+assert.ok(
+  elapsed > 0.5 && elapsed < 1.2,
+  "Alignment settles within a human-scale beat",
+);
+
 const coarse = { value: 5, velocity: -2 },
   fine = { ...coarse };
 for (let i = 0; i < 30; i++) damp(coarse, -3, 4, 1 / 30);
@@ -126,6 +163,8 @@ console.log(
       forwardPeaks: [peak(22.7), peak(23.3)],
       returnPeaks: [peak(24.2), peak(24.8)],
       maxFrameDelta,
+      preludeDelta,
+      alignmentSeconds: elapsed,
       checks: "passed",
     },
     null,

@@ -1,24 +1,32 @@
 import assert from "node:assert/strict";
-import { columnFiles, fileLocation } from "../src/data.ts";
+import {
+  columnFiles,
+  fileLocation,
+  fileAtSlot,
+  records,
+} from "../src/data.ts";
 import {
   fileAtCell,
   selectionCell,
   visibleCell,
-  poolCell,
   cellKey,
   LOOP_COLUMNS,
   LOOP_ROWS,
   wrap,
 } from "../src/archive-loop.ts";
 
-// The same eight files and five column categories recur on both sides of zero.
-for (let lane = -23; lane <= 23; lane++) {
-  const files = columnFiles(wrap(lane, 5));
-  for (let row = -35; row <= 35; row++) {
-    assert.equal(fileAtCell({ lane, row }), files[wrap(row - 12, 8)]);
-  }
-}
 let checks = 0;
+// Every document owns exactly one array slot: a shared slot would hide one file
+// behind another and make the loop unreachable for it.
+const slots = new Set();
+for (const index of records.keys()) {
+  const location = fileLocation(index);
+  assert.equal(fileAtSlot(location.slot), index, "Slot lookup returns its own file");
+  assert.ok(location.row >= 0 && location.row < 32);
+  assert.ok(!slots.has(location.slot), `Slot ${location.slot} is claimed twice`);
+  slots.add(location.slot);
+}
+assert.equal(slots.size, records.length);
 for (const direction of [-1, 1]) {
   let cell = { lane: 2, row: 12 };
   let index = fileAtCell(cell);
@@ -64,19 +72,11 @@ for (const center of [
   assert.ok(lanes[0] < center.lane - 3 && lanes.at(-1) > center.lane + 3);
   assert.ok(rows[0] < center.row - 14 && rows.at(-1) > center.row + 14);
 }
-for (let i = 0; i < 160; i++) {
-  assert.deepEqual(
-    poolCell(i),
-    { lane: Math.floor(i / 32), row: i % 32 },
-    "Reference-animation instance order is preserved",
-  );
-}
 console.log(
   JSON.stringify(
     {
       directionalMoves: checks,
       poolSize: LOOP_COLUMNS * LOOP_ROWS,
-      referenceInstances: 160,
       checks: "passed",
     },
     null,

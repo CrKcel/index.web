@@ -24,8 +24,8 @@
 | [`public/assets/`](public/assets/) | 运行所需的 GLB 模型 |
 | [`art/`](art/) | Blender 源文件、建模与审阅脚本 |
 | [`scripts/`](scripts/) | 构建、部署、内容校验与行为检查 |
-| [`docs/media/`](docs/media/) | README 截图与动图 |
-| [`DESIGN.md`](DESIGN.md) | 视觉、相机、材质与运动约束 |
+| [`docs/`](docs/) | 设计约束、部署与验收说明、README 截图 |
+| [`docs/DESIGN.md`](docs/DESIGN.md) | 视觉、相机、材质与运动约束 |
 
 原片时间轴使用 160 个阵列位置；交互模式按当前镜头与视口计算候选范围并裁剪屏幕外档案，让有限的档案内容可以持续循环。
 
@@ -33,11 +33,18 @@
 
 修改档案内容从 [`content/archives.json`](content/archives.json) 入手，字段与操作步骤见 [档案修改说明](content/README.md)。`npm run dev` 与 `npm run build` 会先校验数据；档案下载由页面用同一份数据生成。`npm run check:content` 检查数据规则与下载文本。
 
-这些脚本检查运动、循环位置、外观、装配结构、解密轨迹、外壳与画质参数。视觉效果仍需在浏览器中实际查看，尤其是快速切换、模型归位、文档揭示及查看器进出过渡。
-
 ```sh
-npm run check:behavior
+npm run check          # 免浏览器的全部检查，清单见 scripts/check.mjs
+npm run check:browser  # 追加真实浏览器回归，需要 Playwright
 ```
+
+`npm run check` 覆盖内容规则、视口与取景、字体栈一致性、运动与循环、拖拽与惯性、可见性覆盖、外观与解密轨迹、外壳与装配、画质上限、渲染去重、主题波与 PWA 重定向。检查脚本直接运行 `src/` 的 TypeScript 源码，需要 Node 24 或更高版本；清单外的 `scripts/check-*.mjs` 会让运行器直接报错。
+
+浏览器回归（PWA 更新与失败恢复、响应式布局、开场入口、拖拽与惯性）需要先 `npm i -D playwright && npx playwright install chromium`，或把 `PLAYWRIGHT_MODULE` 指向已有的安装；`check-responsive`、`check-startup-entry` 等脚本用 `REVIEW_URL` 指向正在运行的 `npm run dev` 或 `npm run preview` 地址，`check-pwa-recovery` 需要 `PWA_PREVIOUS_DIST` 指向上一份构建产物。脚本优先用系统中的 Chrome 无头运行；找不到时回退到 Playwright 自带的 Chromium，并改为有窗口运行，因为它的无头构建是软件渲染、跑不到实时，动画等待会超时。`REVIEW_CHANNEL` 可指定浏览器（`chromium` 表示强制使用自带构建），`REVIEW_HEADED=1` 强制有窗口运行。视觉效果仍需在浏览器中实际查看，尤其是快速切换、模型归位、文档揭示及查看器进出过渡。
+
+### 交付与验收
+
+`npm run build` 生成 `dist` 与带内容版本的 Service Worker，`npm run build:worker` 生成 `release/cloudflare/site` 发行包，`npm run deploy` 由 Wrangler 上传；上线后用 `npm run check:deployment` 逐字节比对线上文件、缓存标头与 404 页面。推送与合并请求由 `.github/workflows/checks.yml` 运行 `npm run check` 与 `npm run build:worker`。流程与回滚方式见 [Cloudflare 部署与验收](docs/CLOUDFLARE-DEPLOYMENT.md)。
 
 | 本地调试路径 | 用途 |
 | --- | --- |

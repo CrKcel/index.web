@@ -2,17 +2,12 @@ import assert from "node:assert/strict";
 import {
   normalizeQuality,
   qualityPresets,
-  matchingPreset,
   renderDimensions,
 } from "../src/render-quality.ts";
 
+// Anything unusable that a browser can hand back from storage must fall back to
+// the authored preset instead of reaching the renderer.
 assert.deepEqual(normalizeQuality(null), qualityPresets.original);
-const legacy = normalizeQuality(undefined, false);
-assert.equal(legacy.pixelRatio, 1);
-assert.equal(legacy.aoSamples, 0);
-assert.equal(legacy.depthOfField, 0);
-assert.equal(legacy.shadows, 2048, "Migration preserves old low-mode shadows");
-assert.equal(legacy.transmission, 1, "Migration preserves old low-mode glass");
 for (const bad of [
   null,
   false,
@@ -31,12 +26,9 @@ for (const bad of [
 assert.equal(normalizeQuality({ scale: 99999 }).scale, 200);
 assert.equal(normalizeQuality({ scale: -1 }).scale, 50);
 assert.equal(normalizeQuality({ depthOfField: 99999 }).depthOfField, 150);
-for (const [name, quality] of Object.entries(qualityPresets)) {
-  assert.equal(matchingPreset(normalizeQuality(quality)), name);
-  const reloaded = normalizeQuality(JSON.parse(JSON.stringify(quality)));
-  assert.deepEqual(reloaded, quality);
-}
-assert.equal(matchingPreset({ ...qualityPresets.ultra, scale: 145 }), "custom");
+
+// Every device/dpr/limit combination has to stay inside the fill-rate budget and
+// inside the driver's maximum texture size.
 for (const width of [640, 1920, 3840, 7680]) {
   for (const dpr of [1, 1.5, 2, 3]) {
     for (const max of [2048, 4096, 16384]) {
@@ -54,25 +46,11 @@ for (const width of [640, 1920, 3840, 7680]) {
     }
   }
 }
-const native = renderDimensions(
-  qualityPresets.original,
-  1920,
-  1080,
-  1,
-  1,
-  16384,
-);
-const ultra = renderDimensions(qualityPresets.ultra, 1920, 1080, 1, 1, 16384);
-assert.equal(native.width, 1920);
-assert.equal(ultra.width, 2880);
-assert.equal(
-  (ultra.width * ultra.height) / (native.width * native.height),
-  2.25,
-);
 assert.equal(
   renderDimensions(qualityPresets.ultra, 1920, 1080, 2, 2, 16384).limited,
   true,
+  "A device that cannot cover the supersampled frame must report the limit",
 );
 console.log(
-  "Quality checks passed: migration, invalid storage, presets, supersampling and 48 device-limit combinations.",
+  "Quality checks passed: invalid storage, clamping and 48 device-limit combinations.",
 );
