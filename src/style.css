@@ -1,10 +1,19 @@
-@import "./fonts.css";
 * {
   box-sizing: border-box;
 }
 :root {
-  font-family:
-    "MiSans", "Mi Sans", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  /* The site ships no webfont; every surface uses the platform UI fonts.
+     Order is three tiers: the size the layout was authored against (MiSans),
+     each platform's *named* UI sans (so an OEM theme that replaces the default
+     family cannot win), then the generic fallbacks. CJK follows its platform's
+     Latin face and per-character fallback keeps mixed text in one family. */
+  --font-system:
+    MiSans, "Mi Sans", -apple-system, BlinkMacSystemFont, "PingFang SC",
+    "Hiragino Sans GB", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei",
+    Roboto, "Noto Sans", "Noto Sans CJK SC", "Noto Sans SC",
+    "Source Han Sans SC", "WenQuanYi Micro Hei", Ubuntu, Cantarell,
+    "DejaVu Sans", system-ui, Arial, Helvetica, sans-serif;
+  font-family: var(--font-system);
   color: #080a08;
   background: #e8e5e1;
   font-synthesis: none;
@@ -102,22 +111,32 @@ button {
   width: 270px;
   white-space: nowrap;
 }
+/* The corner identity is a calibrated lockup: every line keeps its authored
+   line box, position and tracking, while --text-fit shrinks only the type until
+   the widest line fits the 270px column. Tracking is authored in em so it keeps
+   its optical ratio at any fitted size. */
 .brand h1 {
-  font-size: 44px;
-  letter-spacing: 2.324px;
+  --font-base: 44px;
+  --fit-width: 270px;
+  font-size: calc(var(--font-base) * var(--text-fit, 1));
+  letter-spacing: 0.052818em;
   line-height: 48px;
   margin: 0;
   font-weight: 750;
 }
 .brand > div {
-  font-size: 19px;
+  --font-base: 19px;
+  --fit-width: 270px;
+  font-size: calc(var(--font-base) * var(--text-fit, 1));
   line-height: 23px;
-  letter-spacing: 0.587px;
+  letter-spacing: 0.030895em;
   font-weight: 600;
 }
 .brand p {
+  --font-base: 35px;
+  --fit-width: 270px;
   margin: 0;
-  font-size: 35px;
+  font-size: calc(var(--font-base) * var(--text-fit, 1));
   line-height: 40px;
   letter-spacing: 0;
   word-spacing: 0;
@@ -126,12 +145,13 @@ button {
 }
 .brand p b {
   font-weight: 750;
-  letter-spacing: 3px;
+  letter-spacing: 0.085714em;
 }
 .brand-analysis {
   position: relative;
   display: block;
-  width: 189px;
+  /* Sized with the optical spread so the letters keep their tuned rhythm. */
+  width: calc(5.4em * var(--analysis-spread, 1));
   height: 40px;
 }
 .brand-analysis > span {
@@ -198,11 +218,14 @@ button {
   width: 100%;
   height: 100%;
 }
+/* The status row grows from left 931px; #auth-message owns the fit because the
+   bullet and the blinking caret keep their authored size. */
 .auth-status {
+  --font-base: 22px;
   position: absolute;
   left: 931px;
   top: 529px;
-  font-size: 22px;
+  font-size: var(--font-base);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -218,13 +241,20 @@ button {
   background: #282b26;
   animation: blink 0.8s steps(1) infinite;
 }
+#auth-message {
+  /* Reference stage width minus the row's left offset, bullet, gaps and caret. */
+  --fit-width: 900px;
+  font-size: calc(var(--font-base) * var(--text-fit, 1));
+}
 .access-text {
+  --font-base: 18px;
+  --fit-width: 420px;
   position: absolute;
   top: 532px;
   left: 800px;
   width: 420px;
   text-align: left;
-  font-size: 18px;
+  font-size: calc(var(--font-base) * var(--text-fit, 1));
   opacity: 0;
 }
 .scan {
@@ -2170,10 +2200,13 @@ button {
   transition: none;
 }
 .welcome-heading {
+  --font-base: 55px;
+  /* The centred line must stay inside the 470px black panel behind it. */
+  --fit-width: 470px;
   position: relative;
   z-index: 1;
   line-height: 65px;
-  font-size: 55px;
+  font-size: calc(var(--font-base) * var(--text-fit, 1));
   white-space: nowrap;
 }
 .welcome-panel {
@@ -2192,27 +2225,32 @@ button {
   height: 60px;
 }
 .welcome-company strong {
+  --font-base: 48px;
+  /* The highlight bar is 410px wide with 8px side padding on each copy. */
+  --fit-width: 394px;
   display: block;
   position: absolute;
   inset: 0;
   padding: 5px 8px;
   background: transparent;
   color: #080a08;
-  font-size: 48px;
+  font-size: calc(var(--font-base) * var(--text-fit, 1));
   line-height: 50px;
   white-space: nowrap;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.010417em;
 }
 .welcome-company .welcome-highlight {
   background: #080a08;
   color: #eeede8;
 }
 .welcome-database {
+  --font-base: 36px;
+  --fit-width: 480px;
   position: absolute;
   top: 134px;
   left: 0;
   width: 100%;
-  font-size: 36px;
+  font-size: calc(var(--font-base) * var(--text-fit, 1));
   line-height: 43px;
   white-space: nowrap;
 }

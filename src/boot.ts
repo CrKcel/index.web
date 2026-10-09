@@ -1,9 +1,12 @@
 import { bootMotion } from "./boot-motion";
-import { bootMarkContour } from "./brand";
+import { bootMarkContour, brandAnalysisWidthEm } from "./brand";
 import { themeAmount } from "./theme-ui";
 import { BootLettering } from "./boot-lettering";
+import { fitElement, fitOwnLine, measureLine, onTextFitRefit, refitText } from "./text-fit";
 
 const ns = "http://www.w3.org/2000/svg";
+// Minimum optical gap between the ANALYSIS wordmark and its OS suffix.
+const brandSuffixGap = 16;
 const arc = (r: number, start: number, sweep: number, x = 960, y = 540) => {
   const point = (a: number) => `${x + Math.cos(a) * r},${y + Math.sin(a) * r}`;
   if (sweep >= Math.PI * 1.999)
@@ -104,21 +107,60 @@ export class BootSequence {
       el.replaceChildren(ink);
     });
     this.poweredHTML = this.el(".powered").innerHTML;
-    new BootLettering(this.brandLines[0], ["brand"]).setText("RHINE LAB");
-    // Bind after collecting the original ring paths. Phrase artwork also has
-    // SVG paths, and must never be included in the scan's animated geometry.
+    // Platform fonts decide glyph widths, so each calibrated line is fitted to
+    // its authored column instead of assuming the reference metrics.
+    const brandLettering = new BootLettering(this.brandLines[0], ["brand"]);
+    brandLettering.setText("RHINE LAB");
+    brandLettering.fitWithin();
+    fitOwnLine(this.brandLines[1]);
+    this.fitBrandAnalysis(this.brandLines[2]);
+    // Bind after collecting the scan's animated geometry; the phrase hosts are
+    // rebuilt with letter cells once the original nodes are captured.
     this.accessLettering = new BootLettering(this.el(".access-text"), ["access"]);
+    this.accessLettering.fitWithin();
     this.authLettering = new BootLettering(this.el("#auth-message"), [
       "identity", "request", "processing", "processingGlitch",
     ]);
+    this.authLettering.fitWithin();
     for (const [selector, key, text] of [
       [".scan > span", "permission", "PERMISSION AUTHORIZED"],
       [".welcome-heading", "welcome", "WELCOME TO"],
       [".welcome-database", "database", "INTERNAL DATABASE"],
-    ] as const) new BootLettering(this.el(selector), [key]).setText(text);
-    this.companyInk.forEach((el) =>
-      new BootLettering(el.querySelector("span")!, ["company"]).setText("RHINE LAB.LLC."),
-    );
+    ] as const) {
+      const lettering = new BootLettering(this.el(selector), [key]);
+      lettering.setText(text);
+      // The permission phrase spreads and converges across the ring by design.
+      if (key !== "permission") lettering.fitWithin();
+    }
+    this.companyInk.forEach((el) => {
+      const lettering = new BootLettering(el.querySelector("span")!, ["company"]);
+      lettering.setText("RHINE LAB.LLC.");
+      // The black highlight bar is the box this text has to stay inside.
+      lettering.fitWithin(el);
+    });
+  }
+  /** The ANALYSIS wordmark places its letters optically, so the lockup line is
+   *  measured as the authored em box plus the OS suffix rather than as a run. */
+  private fitBrandAnalysis(line: HTMLElement) {
+    const suffix = line.querySelector("b")!;
+    const refit = () => {
+      const style = getComputedStyle(line);
+      const size = Number.parseFloat(style.fontSize);
+      // Only ever widen the authored rhythm, so the reference lockup keeps its
+      // tuned positions while a wider platform font spreads with its glyphs.
+      const spread = Math.max(
+        1,
+        measureLine("ANALYSIS", style) / (brandAnalysisWidthEm * size),
+      );
+      line.style.setProperty("--analysis-spread", spread.toFixed(4));
+      fitElement(
+        line,
+        brandAnalysisWidthEm * size * spread + brandSuffixGap +
+          measureLine(suffix.textContent ?? "", getComputedStyle(suffix)),
+      );
+    };
+    refit();
+    return onTextFitRefit(refit);
   }
   private el(selector: string) {
     return this.nodes.get(selector)!;
@@ -259,7 +301,6 @@ export class BootSequence {
     });
     this.opacity(".scan > span", s.permissionOpacity);
     this.el(".scan > span").style.letterSpacing = `${s.scanTracking}px`;
-    this.el(".scan > span").style.setProperty("--boot-phrase-tracking", `${s.scanTracking}px`);
     this.el(".scan > span").style.fontSize = `${s.scanFont}px`;
   }
   reset() {
@@ -270,5 +311,7 @@ export class BootSequence {
     this.brandLines.forEach((node) => node.removeAttribute("style"));
     this.el(".powered").innerHTML = this.poweredHTML;
     this.opacity("#boot-background", 0);
+    // Clearing the line styles also clears --text-fit, so the lockup is refitted.
+    refitText();
   }
 }

@@ -20,7 +20,5 @@ __pycache__/
 # Local integration checkout
 .main-integration/
 
-# Individually licensed MyFonts kit; install locally, never publish to Git.
-public/fonts/novecento/
 .wrangler/
 .DS_Store

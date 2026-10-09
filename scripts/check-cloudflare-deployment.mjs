@@ -13,7 +13,7 @@ if (actual.version !== expected.version || JSON.stringify(actual.files) !== JSON
   throw Error(`Release mismatch: expected ${expected.version}, got ${actual.version}`);
 let next = 0;
 let checked = 0;
-const files = [...expected.files, 'sw.js', 'update.html', 'update.js', 'fonts/novecento/RhineLabNovecento.css'];
+const files = [...expected.files, 'sw.js', 'update.html', 'update.js'];
 await Promise.all(Array.from({ length: 6 }, async () => {
   while (next < files.length) {
     const path = files[next++];
@@ -29,6 +29,7 @@ await Promise.all(Array.from({ length: 6 }, async () => {
     checked++;
   }
 }));
-const missing = await fetch(new URL('missing-cloudflare-verification.woff2', base), { signal: AbortSignal.timeout(30000) });
+// Any unmatched path must return the release's 404 page, never the application shell.
+const missing = await fetch(new URL('missing-cloudflare-verification.bin', base), { signal: AbortSignal.timeout(30000) });
 if (missing.status !== 404) throw Error(`Missing file returns ${missing.status}, expected 404`);
 console.log(JSON.stringify({ url: base.href, version: actual.version, verifiedFiles: checked, allBytesMatch: true, missingFileStatus: missing.status }, null, 2));

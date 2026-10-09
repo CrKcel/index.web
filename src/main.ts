@@ -11,14 +11,13 @@ import "./style.css";
 import "./quality-settings.css";
 import "./responsive.css";
 import { viewportLayout, openingLayout } from "./viewport-layout";
-import { assetUrl } from "./asset-url";
 import { initPwa, pwaSettingsMarkup } from "./pwa";
 import { createRollingNumber, createRollingText } from "@kitlangton/rolling-number";
 import { ArchiveScene } from "./scene";
 import { ModelViewer } from "./model-viewer";
 import { ContentTransition, SurfaceTransition } from "./ui-transitions";
 import { BootSequence } from "./boot";
-import { loadBootWebfonts } from "./boot-lettering";
+import { refitText } from "./text-fit";
 import { wrap, type ArchiveNavigation } from "./archive-loop";
 import {
   records,
@@ -321,6 +320,8 @@ function fit() {
     scene?.resize();
     viewer?.resize();
   }
+  // Breakpoints change the authored sizes, so calibrated lines are refitted.
+  refitText();
   // Re-measure line covers and tab underline after wrapping changes.
   requestAnimationFrame(() => {
     documentDecryption.refresh();
@@ -666,7 +667,7 @@ function renderResults() {
     `${String(results.length).padStart(2, "0")} RECORDS FOUND`;
 }
 function settingsMarkup() {
-  return `<h2>SYSTEM SETTINGS<small>终端偏好设置</small></h2><p class="settings-intro">JOYCE MOORE <span>·</span> SESSION AUTHORIZED</p><div class="settings-list">${themeSettingsMarkup(prefs.colorTheme)}${audioSettingsMarkup(prefs)}</div>${motionSettingsMarkup(prefs.motion, prefs.motionPreset)}${qualityMarkup(prefs.rendering)}${pwaSettingsMarkup()}<div class="settings-shortcuts"><span>KEYBOARD CONTROLS</span><p><kbd>←</kbd><kbd>→</kbd> 切列 <kbd>↑</kbd><kbd>↓</kbd> 选档 <kbd>ENTER</kbd> 读取 <kbd>/</kbd> 检索 <kbd>ESC</kbd> 返回</p></div><div class="settings-bottom">${document.fullscreenEnabled ? '<button data-action="fullscreen">FULLSCREEN <span>↗</span></button>' : ''}<button data-action="restart">REINITIALIZE SYSTEM <span>↻</span></button></div><div class="modal-bottom"><span>ANALYSIS OS / 1.0 · 使用 MiSans 字体（小米） <a href="${assetUrl("fonts/MiSans-license.pdf")}" target="_blank" rel="noopener">字体许可</a></span><span>POWERED BY RHINE LAB</span></div>`;
+  return `<h2>SYSTEM SETTINGS<small>终端偏好设置</small></h2><p class="settings-intro">JOYCE MOORE <span>·</span> SESSION AUTHORIZED</p><div class="settings-list">${themeSettingsMarkup(prefs.colorTheme)}${audioSettingsMarkup(prefs)}</div>${motionSettingsMarkup(prefs.motion, prefs.motionPreset)}${qualityMarkup(prefs.rendering)}${pwaSettingsMarkup()}<div class="settings-shortcuts"><span>KEYBOARD CONTROLS</span><p><kbd>←</kbd><kbd>→</kbd> 切列 <kbd>↑</kbd><kbd>↓</kbd> 选档 <kbd>ENTER</kbd> 读取 <kbd>/</kbd> 检索 <kbd>ESC</kbd> 返回</p></div><div class="settings-bottom">${document.fullscreenEnabled ? '<button data-action="fullscreen">FULLSCREEN <span>↗</span></button>' : ''}<button data-action="restart">REINITIALIZE SYSTEM <span>↻</span></button></div><div class="modal-bottom"><span>ANALYSIS OS / 1.0 · 使用系统字体</span><span>POWERED BY RHINE LAB</span></div>`;
 }
 
 document.addEventListener("input", (e) => {
@@ -943,9 +944,6 @@ function bootFrame(t: number) {
 
 const inspectionOverlay = new InspectionOverlay();
 const documentDecryption = new DocumentDecryption();
-// A newly opened archive can introduce another font shard. Re-measure its
-// redaction lines after font swap while retaining the current reveal progress.
-document.fonts.addEventListener("loadingdone", () => documentDecryption.refresh());
 
 let lastTime = 0,
   frameCount = 0,
@@ -1029,16 +1027,7 @@ async function start() {
   try {
     scene = new ArchiveScene($("#three-scene"));
     scene.setTheme(darkTheme(), true);
-    await Promise.all([
-      scene?.load(),
-      loadBootWebfonts(),
-      // With unicode-range faces, preload the opening's actual characters,
-      // not every font shard. Other archive text loads on demand.
-      document.fonts.load("300 20px MiSans", "ACCESS WELCOME TO INTERNAL DATABASE"),
-      document.fonts.load("400 20px MiSans", "身份信息确认请求已接收开始处理权限验证通过欢迎访问莱茵生命内部资料档案编号保密级别商业区选择档案：0123456789 JOYCE MOORE"),
-      document.fonts.load("600 20px MiSans", "SYNTHESIZE INFORMATION ANALYSIS OS"),
-      document.fonts.load("700 20px MiSans", "RHINE LAB WELCOME TO INTERNAL DATABASE"),
-    ]);
+    await scene?.load();
     if (scene) bindScene(scene);
     savePrefs();
     ready = true;

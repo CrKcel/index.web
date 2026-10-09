@@ -1,4 +1,4 @@
-// Real browser checks for entry audio, first-load fonts and failure recovery.
+// Real browser checks for entry audio, platform-font loading and failure recovery.
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -45,9 +45,9 @@ try {
       await page.waitForTimeout(700);
       assert.equal(await page.evaluate(()=>window.rhine.stats().bootTime),6.76);
       assert.equal(await page.evaluate(()=>document.documentElement.dataset.offlineReady),undefined);
-      const fonts=await page.evaluate(()=>performance.getEntriesByType('resource').filter(e=>e.name.endsWith('.woff2')).map(e=>({url:new URL(e.name).pathname,bytes:e.decodedBodySize})));
-      assert.ok(fonts.length>0&&fonts.every(f=>f.url.includes('/fonts/misans-webfont-4.3.1/')));
-      assert.ok(fonts.reduce((n,f)=>n+f.bytes,0)<2*1024*1024,'Entry must not load entire font families');
+      // The interface must rely on platform fonts: no webfont request at all.
+      const fonts=await page.evaluate(()=>performance.getEntriesByType('resource').filter(e=>e.name.endsWith('.woff2')).map(e=>new URL(e.name).pathname));
+      assert.equal(fonts.length,0,'The site must not download webfonts');
       const rect=await page.locator('.entry-start').boundingBox(),vp=page.viewportSize();
       assert.ok(rect.x>=0&&rect.y>=0&&rect.x+rect.width<=vp.width&&rect.y+rect.height<=vp.height);
       if(name==='desktop'||name==='portrait')await page.screenshot({path:resolve(output,`entry-${name}.png`)});
@@ -62,7 +62,7 @@ try {
         assert.ok(after.bootTime<9,'Waiting time must not advance the animation');
         if(name!=='music-only')await page.waitForFunction(()=>window.rhine.stats().audio.playedKeys>0,null,{timeout:10000});
       }
-      report.checks.push({name,entryFontBytes:fonts.reduce((n,f)=>n+f.bytes,0),fontRequests:fonts.length,audio:after.audio.state,tracks:after.audio.tracks});
+      report.checks.push({name,fontRequests:fonts.length,audio:after.audio.state,tracks:after.audio.tracks});
       await context.close();
     }
     {

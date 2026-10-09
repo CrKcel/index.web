@@ -6,7 +6,7 @@
 
 - 文档：https://developers.cloudflare.com/workers/ ，MCP：`https://docs.mcp.cloudflare.com/mcp`。所有限制与配额从产品的 `/platform/limits/` 页面获取。
 - 命令：`npx wrangler dev` 本地开发，`npx wrangler deploy` 部署，`npx wrangler types` 生成类型；改动绑定后运行 `wrangler types`。
-- `npm run deploy` 先执行 `npm run build:worker` 生成发行包到 `release/cloudflare/site`，校验授权 Novecento 字体并写入缓存标头与 `404.html`，再通过 Wrangler 上传；字体不进入 Git，构建时从运行的正式站点恢复并校验。未命中路径返回 404，`/index.html` 重定向到 `/`。部署记录见 `docs/CLOUDFLARE-DEPLOYMENT.md`。
+- `npm run deploy` 先执行 `npm run build:worker` 生成发行包到 `release/cloudflare/site`，写入缓存标头与 `404.html`，再通过 Wrangler 上传。未命中路径返回 404，`/index.html` 重定向到 `/`。部署记录见 `docs/CLOUDFLARE-DEPLOYMENT.md`。
 - `npx wrangler dev` 运行时提供 Local Explorer API 用于检查本地 Worker、绑定与存储状态，API 基址在终端输出。常用端点：`/cdn-cgi/local/explorer/api/local/workers`、`/storage/kv/namespaces`、`/d1/database`、`/r2/buckets`、`/workers/durable_objects/namespaces`、`/workflows`，以及 `POST /local/observability/query`（只读 SQL）与 `POST /local/observability/clear`。
 
 ## 视觉与时序
@@ -17,7 +17,7 @@
 
 - 1920×1080 为布局基准，等比例适应窗口；支持桌面不同比例、手机横竖屏与触摸操作，16:9 为视觉基准。
 - 档案内容独立保存在 `content/archives.json`，页面与 TXT 导出共用，构建前校验；保留五列、每列八份与稳定编号约束，步骤见 `content/README.md`。
-- 字体分包 `misans-webfont@4.3.1` 随项目同源部署、按页面字符加载；Novecento 与 MiSans 的许可、来源与固定版本记录保存在 `public/fonts`。授权 Novecento 与 MiSans/Novecento 独立许可资源不进入 Git。
+- 界面不加载任何自定义字体，统一使用系统 UI 字体栈，顺序为「`MiSans`（排字标定基准）→ 各平台具名 UI 无衬线（含 CJK）→ `system-ui` / `Arial` / `sans-serif` 兜底」，具名族名必须留在 `system-ui` 之前；列表定义在 `src/style.css` 的 `--font-system` 与 `src/fonts.ts`，`public/update.html` 内联同一份，二维画布与内联 SVG 复用同一份列表，因此没有字体分包、许可文件与字体缓存标头。标定过的单行盒靠 `--font-base` + `--fit-width` + `--text-fit`（见 `src/text-fit.ts`）在更宽的平台字体下收缩字号，新增或改动这类盒子时必须补齐前两个变量，并保留开场授权环那种有意的大字距动画。
 - 画质只调整渲染精度与可选效果，不重新制作模型；默认采用原始预设。
 - 声音与音乐独立开关与音量；保留源谱与音色生成脚本。
 

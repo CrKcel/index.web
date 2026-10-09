@@ -5,8 +5,9 @@
 参考为原片的 5–40 秒，1920×1080、25fps。应用内部时间码为原片时间减 5 秒；正常启动与重播从原片 6.76 秒的白色画面开始，黑底的鹰角网络片头不纳入。美术模型通过 Blender MCP 制作，保留源文件与可复现脚本；界面使用 TypeScript、Three.js 与 Vite，开场由 DOM / SVG 与场景时间轴驱动。原片与提取帧仅用于本地对照，不作为产品背景，不随仓库分发。
 
 - 暖灰白底、黑色文字、暖杏金选中信号。界面以细线和紧凑排字组织，保留原片标题与右下角署名位置。
-- 字体为用户指定的 MiSans，采用 `misans-webfont@4.3.1`（源字体 4.003）分包，同源固定版本、按字符加载，保留 300、400、600、700 四个字重与 `font-display: swap`，后备为 PingFang SC / Microsoft YaHei / system-ui。分片字节不改动，移除上游 CSS 的 local() 以免设备字体覆盖固定版本。版权、许可与分片哈希见 `public/fonts`，设置页含署名与许可入口。
-- 开场中央文字使用 Novecento Sans Wide：访问、身份、请求、处理、授权提示为 Normal，欢迎三行为 Bold，左上 RHINE LAB 为 DemiBold，其下两行保留 MiSans。授权 WOFF2 单独存放并排除公开 Git，加载失败时回退到固定轮廓图形。
+- 界面不加载任何自定义字体：文字全部使用系统 UI 字体栈，分三层排序：① 排字标定所依据的 `MiSans`（含 `Mi Sans` 别名，小米机型命中即回到原始标定）；② 各平台的**具名** UI 无衬线——Apple `-apple-system` / `BlinkMacSystemFont` / `PingFang SC` / `Hiragino Sans GB`，Windows `Segoe UI` / `Microsoft YaHei UI` / `Microsoft YaHei`，Android/ChromeOS/Linux `Roboto` / `Noto Sans` / `Noto Sans CJK SC` / `Noto Sans SC` / `Source Han Sans SC` / `WenQuanYi Micro Hei`，Linux 桌面 `Ubuntu` / `Cantarell` / `DejaVu Sans`——具名族名一律排在 `system-ui` 之前，以免 OEM 主题替换默认族时抢先；③ `system-ui` / `Arial` / `Helvetica` / `sans-serif` 兜底。逐字符回退保证中英混排取自同一设计族。同一列表在 `src/style.css` 以 `--font-system` 提供给 CSS，在 `src/fonts.ts` 提供给二维画布标签与内联 SVG，`public/update.html` 内联同一份。因此没有字体下载、分片、许可与字体缓存标头，字重与字距由平台字体决定，`font-synthesis: none` 保持不合成字重。
+- 开场中央文字同样使用系统字体：访问、身份、请求、处理、授权提示、欢迎三行与左上 RHINE LAB 都按逐字单元渲染，沿用原时间轴的逐字显现、停顿与清空节奏。字形宽度不再与原片逐帧对齐，品牌与提示尺寸回落到 MiSans 时期的排字标定。
+- 平台字体的字宽不受控，所以标定过的单行盒按契约排字：元素声明 `--font-base`（设计字号）与 `--fit-width`（设计列宽），`src/text-fit.ts` 用画布按当前字体测量整行的自然宽度，只把 `--text-fit` 乘数写回，行盒、位置、字距比例与显现时序都不变。字体不比参考更宽时不写回任何值，渲染与参考逐像素一致；收缩下限 0.70，可吸收比参考宽约 40% 的平台字体。ANALYSIS 字标的手工定位由 `--analysis-spread` 按字体实际字宽等比展开（只放大不收紧，参考字宽下为 1），避免更宽的字体让字母互相压叠。授权环的 `PERMISSION AUTHORIZED` 保留有意的大字距收拢动画，不参与收缩。
 - 模型由磨砂盖板、基板、内部光学腔、环槽、边框、螺钉、标签与刻线组成，圆环位于盖板后方。交互阵列以投影贴图绘制这一外观，代理取卡片的包围盒；开出与查看器仍使用带物理透射的完整几何。
 - 灯光统一到 `src/archive-lighting.ts`：曝光 1.00，环境强度 0.52，暖白主光 1.7，主光位置 (-8,14,4)，补光 0.3，半球光 0.5。主场景与独立查看器各自在自己的 WebGL 上下文生成环境贴图。
 
@@ -73,7 +74,7 @@
 - 身份段为 `ID CONFIRMED : JOYCE MOORE`、`REQUEST RECEIVED`、`START PROCESSING...`；权限段使用从画面外收拢的黑白双环、反向内弧、橙色节点、四帧缩放跳变与中心图形切换；欢迎段保留黑白闪切、公司名称黑底横向扫过与 `INTERNAL DATABASE` 闪现，最后缩小、失焦并带轻微青色过渡进入白场。
 - 两侧小圆以原位旋转和弧段补全为主，左右反向旋转并减速；圆心只保留轻微收拢，中央圆点周围的六颗小点沿约 35px 轨道绕行、每隔三帧进入；中央大点闪变后缩小。
 - 加号与方点同帧展开，方点随后拉成长横；Logo 左移按实测位置拟合，缺口沿轮廓移动，整个标志保持黑色，不使用整枚透明度闪烁。
-- 品牌三行使用原版 MiSans 排版、与共享标志一致的路径；品牌容器左 59px、上 114px、宽 270px，第一行 44px / 48px 行高 / 2.5px 字距，第二行 19px / 23px 行高 / 600 字重 / 0.65px 字距，第三行 35px / 40px 行高，ANALYSIS 按黑色字面起点校准字距，OS 右对齐。
+- 品牌三行使用系统字体排版、与共享标志一致的路径；品牌容器左 59px、上 114px、宽 270px，第一行 44px / 48px 行高 / 2.324px 字距，第二行 19px / 23px 行高 / 600 字重 / 0.587px 字距，第三行 35px / 40px 行高，ANALYSIS 按黑色字面起点校准字距，OS 右对齐。
 
 ## 标题、编号与文字滚动
 
