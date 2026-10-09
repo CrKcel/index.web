@@ -14,6 +14,10 @@ const here = dirname(fileURLToPath(import.meta.url));
 const offline = [
   "check-content.mjs",
   "check-viewport.mjs",
+  "check-archive-camera.mjs",
+  "check-archive-field.mjs",
+  "check-archive-stats.mjs",
+  "check-boot-frame.mjs",
   "check-fonts.mjs",
   "check-motion.mjs",
   "check-loop.mjs",
@@ -27,6 +31,7 @@ const offline = [
   "check-quality.mjs",
   "check-render-updates.mjs",
   "check-theme.mjs",
+  "check-audio.mjs",
   "check-pr15-port.mjs",
   "check-pwa-redirect.mjs",
 ];

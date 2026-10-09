@@ -93,7 +93,7 @@
 - 玻璃交互使用短起音、不等间隔共鸣与迅速衰减的高频，区分切档轻碰、抽取余音与归位落定。
 - 逐字输入使用原片约 6.864–6.986 秒的三个 38ms 短音轮替，保留源波形，按实际文字揭示帧触发，输入最短间隔 24ms；新字段首字有反馈，闪动恢复不误触发。
 - 窗口开合使用短电子升降音，启动标志使用低频缓起和声，整块文字显现使用轻微数据脉冲，授权使用双电子短音。
-- 配乐生成器为 `scripts/render-audio.mjs`，音效合成为 `src/audio.ts`，来源与处理记录见 `public/audio/README.md`。
+- 配乐生成器为 `scripts/render-audio.mjs`，音效合成为 `src/audio-synth.ts`，三轨循环与声部混合为 `src/audio-music.ts`，设备生命周期、手势解锁与开场提示调度为 `src/audio.ts`，来源与处理记录见 `public/audio/README.md`。
 
 ## 画质与性能
 

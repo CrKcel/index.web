@@ -1,4 +1,4 @@
-import type { AudioPreferences } from "./audio";
+import type { AudioPreferences } from "./audio-types";
 
 export function audioSettingsMarkup(prefs: AudioPreferences) {
   return `<div class="audio-settings">${(

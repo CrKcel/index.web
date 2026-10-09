@@ -12,12 +12,24 @@
 
 | 目录或文件 | 内容 |
 | --- | --- |
-| [`src/main.ts`](src/main.ts) | 页面状态、档案阅读、检索、收藏与快捷键 |
+| [`src/main.ts`](src/main.ts) | 页面状态、模式切换与动作实现 |
+| [`src/controls.ts`](src/controls.ts) | 事件委托：设置控件、目录按钮、快捷键与模态焦点陷阱 |
+| [`src/boot-frame.ts`](src/boot-frame.ts) | 开场时间轴的纯函数：步进阈值、淡入与运镜通道 |
+| [`src/review-api.ts`](src/review-api.ts) | `window.rhine` 评审接口与音频预览协议 |
+| [`src/stage-markup.ts`](src/stage-markup.ts)、[`src/detail-markup.ts`](src/detail-markup.ts)、[`src/directory-markup.ts`](src/directory-markup.ts)、[`src/settings-markup.ts`](src/settings-markup.ts) | 舞台、档案正文、检索目录与设置面板的标记 |
+| [`src/prefs-store.ts`](src/prefs-store.ts)、[`src/layout-fit.ts`](src/layout-fit.ts)、[`src/rolling-widgets.ts`](src/rolling-widgets.ts) | 偏好持久化、舞台标定与滚动数字/文字组件 |
 | [`src/boot.ts`](src/boot.ts)、[`src/boot-motion.ts`](src/boot-motion.ts) | 开场界面与逐帧时间轴 |
 | [`src/scene.ts`](src/scene.ts)、[`src/archive-loop.ts`](src/archive-loop.ts) | Three.js 场景、循环阵列、抽取与归位 |
+| [`src/archive-camera.ts`](src/archive-camera.ts) | 相机取景与开场运镜（纯函数，标定端点见 `docs/DESIGN.md`） |
+| [`src/archive-field.ts`](src/archive-field.ts) | 阵列表面波场：驻波、呼吸、选中涟漪与配乐位移 |
+| [`src/archive-pointer.ts`](src/archive-pointer.ts) | 指针、滚轮与拖拽手势、惯性交接与悬停采样 |
+| [`src/archive-render.ts`](src/archive-render.ts) | 合成通道链、画质开关与帧去重 |
+| [`src/archive-cassette.ts`](src/archive-cassette.ts) | 模型装配、烘焙代理、标签画布与实例打包 |
+| [`src/archive-stats.ts`](src/archive-stats.ts) | 评审读数：投影、池边界、选中阶段与材质钩子回读 |
 | [`src/model-viewer.ts`](src/model-viewer.ts) | 独立模型查看器与拆解动画 |
 | [`src/decryption.ts`](src/decryption.ts)、[`src/document-decryption.ts`](src/document-decryption.ts) | 模型解密轨迹与正文同步揭示 |
-| [`src/audio.ts`](src/audio.ts)、[`public/audio/`](public/audio/) | 交互音效、三轨配乐与音源记录 |
+| [`src/audio.ts`](src/audio.ts) | 音频设备生命周期、手势解锁、音效节流与开场提示调度 |
+| [`src/audio-synth.ts`](src/audio-synth.ts)、[`src/audio-music.ts`](src/audio-music.ts)、[`src/audio-types.ts`](src/audio-types.ts)、[`public/audio/`](public/audio/) | 交互音效合成、三轨配乐循环与声部比例、音效清单与音源记录 |
 | [`src/render-quality.ts`](src/render-quality.ts)、[`src/quality-renderer.ts`](src/quality-renderer.ts) | 画质预设与渲染管线 |
 | [`content/archives.json`](content/archives.json) | 页面与下载共用的五类、40 份档案数据 |
 | [`src/data.ts`](src/data.ts) | 档案类型与阵列位置映射 |
@@ -38,7 +50,7 @@ npm run check          # 免浏览器的全部检查，清单见 scripts/check.m
 npm run check:browser  # 追加真实浏览器回归，需要 Playwright
 ```
 
-`npm run check` 覆盖内容规则、视口与取景、字体栈一致性、运动与循环、拖拽与惯性、可见性覆盖、外观与解密轨迹、外壳与装配、画质上限、渲染去重、主题波与 PWA 重定向。检查脚本直接运行 `src/` 的 TypeScript 源码，需要 Node 24 或更高版本；清单外的 `scripts/check-*.mjs` 会让运行器直接报错。
+`npm run check` 覆盖内容规则、视口与取景、相机取景端点、表面波场、评审读数、开场帧、字体栈一致性、运动与循环、拖拽与惯性、可见性覆盖、外观与解密轨迹、外壳与装配、画质上限、渲染去重、主题波、音效与配乐逻辑与 PWA 重定向。检查脚本直接运行 `src/` 的 TypeScript 源码，需要 Node 24 或更高版本；清单外的 `scripts/check-*.mjs` 会让运行器直接报错。
 
 浏览器回归（PWA 更新与失败恢复、响应式布局、开场入口、拖拽与惯性）需要先 `npm i -D playwright && npx playwright install chromium`，或把 `PLAYWRIGHT_MODULE` 指向已有的安装；`check-responsive`、`check-startup-entry` 等脚本用 `REVIEW_URL` 指向正在运行的 `npm run dev` 或 `npm run preview` 地址，`check-pwa-recovery` 需要 `PWA_PREVIOUS_DIST` 指向上一份构建产物。脚本优先用系统中的 Chrome 无头运行；找不到时回退到 Playwright 自带的 Chromium，并改为有窗口运行，因为它的无头构建是软件渲染、跑不到实时，动画等待会超时。`REVIEW_CHANNEL` 可指定浏览器（`chromium` 表示强制使用自带构建），`REVIEW_HEADED=1` 强制有窗口运行。视觉效果仍需在浏览器中实际查看，尤其是快速切换、模型归位、文档揭示及查看器进出过渡。
 
