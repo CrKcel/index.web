@@ -82,14 +82,6 @@ function wav(data, file) {
   data.copy(out, 44);
   fs.writeFileSync(file, out);
 }
-// Review-only source excerpt. Uniform gain makes its level comparable to the rebuilt sequence.
-const referencePcm = Buffer.alloc(source.length * 2);
-for (let i = 0; i < source.length; i++)
-  referencePcm.writeInt16LE(
-    Math.round(Math.max(-1, Math.min(1, source[i] * gain * 0.2)) * 32767),
-    i * 2,
-  );
-wav(referencePcm, "reference/typing-original.wav");
 const preview = Buffer.alloc(rate * 2 * 2);
 const pulseTimes = [
   0.02, 0.064, 0.108, 0.152, 0.2, 0.244, 0.288, 0.332, 0.38, 0.424, 0.468,

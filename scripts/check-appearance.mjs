@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import * as THREE from "three";
 import { CardAppearance } from "../src/appearance.ts";
+import {
+  CLEAR_ROUGHNESS,
+  FROSTED_ROUGHNESS,
+} from "../src/glass-reveal.ts";
 
 const appearance = new CardAppearance();
 const high = new THREE.MeshPhysicalMaterial({
@@ -93,7 +97,12 @@ const shader = {
 };
 body.material.onBeforeCompile(shader, null);
 assert.equal(shader.uniforms.archiveQuality, body.userData.appearance);
-assert.ok(shader.fragmentShader.includes("roughnessFactor = mix(0.28"));
+assert.ok(
+  shader.fragmentShader.includes(
+    `roughnessFactor = mix(mix(0.28, ${FROSTED_ROUGHNESS}, archiveQuality), ${CLEAR_ROUGHNESS}, glassRevealAtHeight(archiveClarity, vArchiveHeight));`,
+  ),
+  "Surface roughness must interpolate frosted, array and revealed-clarity levels",
+);
 appearance.dispose(returning);
 assert.ok(body.material.color.r > 0);
 console.log(

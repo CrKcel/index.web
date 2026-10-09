@@ -24,7 +24,6 @@
 | [`public/assets/`](public/assets/) | 运行所需的 GLB 模型 |
 | [`art/`](art/) | Blender 源文件、建模与审阅脚本 |
 | [`scripts/`](scripts/) | 构建、部署、内容校验与行为检查 |
-| [`reference/`](reference/) | 开发对照与逐帧审阅工具 |
 | [`docs/media/`](docs/media/) | README 截图与动图 |
 | [`DESIGN.md`](DESIGN.md) | 视觉、相机、材质与运动约束 |
 
@@ -34,29 +33,17 @@
 
 修改档案内容从 [`content/archives.json`](content/archives.json) 入手，字段与操作步骤见 [档案修改说明](content/README.md)。`npm run dev` 与 `npm run build` 会先校验数据；档案下载由页面用同一份数据生成。`npm run check:content` 检查数据规则与下载文本。
 
-```sh
-node scripts/check-motion.mjs
-node scripts/check-loop.mjs
-node scripts/check-archive-impostor.mjs
-node scripts/check-appearance.mjs
-node scripts/check-assembly.mjs
-node scripts/check-decryption.mjs
-node scripts/check-shell.mjs
-node scripts/check-internal-optics.mjs
-node scripts/check-quality.mjs
-```
+这些脚本检查运动、循环位置、外观、装配结构、解密轨迹、外壳与画质参数。视觉效果仍需在浏览器中实际查看，尤其是快速切换、模型归位、文档揭示及查看器进出过渡。
 
-这些脚本检查运动、循环位置、外观、装配结构、解密轨迹、外壳、内构与画质参数。视觉效果仍需在浏览器中实际查看，尤其是快速切换、模型归位、文档揭示及查看器进出过渡。
+```sh
+npm run check:behavior
+```
 
 | 本地调试路径 | 用途 |
 | --- | --- |
 | `/?scene=archive` | 直接进入档案阵列 |
 | `/?scene=detail` | 直接进入档案详情 |
 | `/?time=28&freeze=1` | 固定在参考时间轴的指定时刻 |
-| `/reference/review.html`、`/reference/boot-review.html` | 原片与复刻对照工具 |
-| `/reference/decryption-review.html` | 玻璃解密逐帧对照 |
-| `/reference/document-decryption-check.html` | 正文同步解密与布局检查 |
-| `/reference/boot-audio.html` | 完整开场声音试听 |
 
 ### Blender 工程
 

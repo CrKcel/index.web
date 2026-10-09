@@ -69,8 +69,10 @@ export class SharedDepthBokeh extends BokehPass {
   private width = 1;
   private height = 1;
   private quad: FullScreenQuad;
-  constructor(scene: THREE.Scene, camera: THREE.Camera, params: BokehPassParameters, private source: () => SharedDepthAO) {
+  private source: () => SharedDepthAO;
+  constructor(scene: THREE.Scene, camera: THREE.Camera, params: BokehPassParameters, source: () => SharedDepthAO) {
     super(scene, camera, params);
+    this.source = source;
     this.quad = new FullScreenQuad(this.materialBokeh);
   }
   setSize(width: number, height: number) { super.setSize(width, height); this.width = width; this.height = height; }

@@ -7,8 +7,6 @@ verification/
 *.mp4
 *.blend1
 optix7cache.db
-reference/*.jpg
-reference/**/*.jpg
 art/.cache/
 .worktrees/
 release/
@@ -19,11 +17,10 @@ __pycache__/
 .env.*
 !.env.example
 
-reference/local-files-connection.js
-
 # Local integration checkout
 .main-integration/
 
 # Individually licensed MyFonts kit; install locally, never publish to Git.
 public/fonts/novecento/
 .wrangler/
+.DS_Store

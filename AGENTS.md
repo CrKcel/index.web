@@ -25,5 +25,4 @@
 
 - `npm run dev` 启动本地开发，`npm run build` 生成静态站点与带内容版本的 Service Worker 到 `dist`，`npm run build:worker` 生成 Cloudflare 发行包，`npm run deploy` 部署。开发模式不注册 Service Worker。
 - `npm run build` 与 `npm run dev` 会先校验档案数据；档案下载由页面用同一份数据生成。`npm run check:content` 检查数据规则与下载文本。
-- 行为与视觉回归脚本位于 `scripts/`。视觉效果需在浏览器中实际查看，尤其是快速切换、模型归位、文档揭示及查看器进出过渡。
-- `reference/` 保存开发对照与逐帧审阅工具，仅用于本地核对，不作为产品内容。
+- 行为与视觉回归脚本位于 `scripts/`，`npm run check:behavior` 依次运行行为复核。这些脚本直接导入 `src/` 的 TypeScript 源码，而源码沿用 Vite 与 tsc 接受的无扩展名相对导入，因此需要预先加载 `scripts/type-import-loader.mjs` 才能在 Node 下解析。视觉效果需在浏览器中实际查看，尤其是快速切换、模型归位、文档揭示及查看器进出过渡。
