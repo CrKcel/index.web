@@ -35,7 +35,7 @@
 | [`src/data.ts`](src/data.ts) | 档案类型与阵列位置映射 |
 | [`public/assets/`](public/assets/) | 运行所需的 GLB 模型 |
 | [`art/`](art/) | Blender 源文件、建模与审阅脚本 |
-| [`scripts/`](scripts/) | 构建、部署、内容校验与行为检查 |
+| [`scripts/`](scripts/) | 构建、部署、内容校验与行为检查；浏览器回归的运行器见 [`scripts/check-browser.mjs`](scripts/check-browser.mjs) |
 | [`docs/`](docs/) | 设计约束、部署与验收说明、README 截图 |
 | [`docs/DESIGN.md`](docs/DESIGN.md) | 视觉、相机、材质与运动约束 |
 
@@ -46,13 +46,19 @@
 修改档案内容从 [`content/archives.json`](content/archives.json) 入手，字段与操作步骤见 [档案修改说明](content/README.md)。`npm run dev` 与 `npm run build` 会先校验数据；档案下载由页面用同一份数据生成。`npm run check:content` 检查数据规则与下载文本。
 
 ```sh
-npm run check          # 免浏览器的全部检查，清单见 scripts/check.mjs
-npm run check:browser  # 追加真实浏览器回归，需要 Playwright
+npm run check  # 免浏览器的全部检查，清单见 scripts/check.mjs，也是 CI 跑的那一套
 ```
 
 `npm run check` 覆盖内容规则、视口与取景、相机取景端点、表面波场、评审读数、开场帧、字体栈一致性、运动与循环、拖拽与惯性、可见性覆盖、外观与解密轨迹、外壳与装配、画质上限、渲染去重、主题波、音效与配乐逻辑与 PWA 重定向。检查脚本直接运行 `src/` 的 TypeScript 源码，需要 Node 24 或更高版本；清单外的 `scripts/check-*.mjs` 会让运行器直接报错。
 
-浏览器回归（PWA 更新与失败恢复、响应式布局、开场入口、拖拽与惯性）需要先 `npm i -D playwright && npx playwright install chromium`，或把 `PLAYWRIGHT_MODULE` 指向已有的安装；`check-responsive`、`check-startup-entry` 等脚本用 `REVIEW_URL` 指向正在运行的 `npm run dev` 或 `npm run preview` 地址，`check-pwa-recovery` 需要 `PWA_PREVIOUS_DIST` 指向上一份构建产物。脚本优先用系统中的 Chrome 无头运行；找不到时回退到 Playwright 自带的 Chromium，并改为有窗口运行，因为它的无头构建是软件渲染、跑不到实时，动画等待会超时。`REVIEW_CHANNEL` 可指定浏览器（`chromium` 表示强制使用自带构建），`REVIEW_HEADED=1` 强制有窗口运行。视觉效果仍需在浏览器中实际查看，尤其是快速切换、模型归位、文档揭示及查看器进出过渡。
+浏览器回归默认不跑：它驱动真实 Chrome 等待动画实时推进，一轮约 6 分钟，只有改动落在浏览器行为上时才运行，通常先用 `--only` 缩小范围。运行器会自己在 `127.0.0.1:5204` 提供刚构建的 `dist`，并在 `.tools/pwa-previous` 保留一份较早的发行副本供 `check-pwa-recovery` 比对，最后逐项打印结果与耗时；已有 `npm run dev` / `npm run preview` 时用 `REVIEW_URL` 指向它，已有旧发行包时用 `PWA_PREVIOUS_DIST` 覆盖快照。
+
+```sh
+npm run check:browser                                        # 全部浏览器回归，约 6 分钟
+node scripts/check-browser.mjs --only=responsive,momentum    # 只跑受影响项（名称按 check-*.mjs）
+```
+
+浏览器回归需要 `npm i -D playwright && npx playwright install chromium`，或把 `PLAYWRIGHT_MODULE` 指向已有的安装。脚本优先用系统中的 Chrome 无头运行；找不到时回退到 Playwright 自带的 Chromium，并改为有窗口运行，因为它的无头构建是软件渲染、跑不到实时，动画等待会超时。`REVIEW_CHANNEL` 可指定浏览器（`chromium` 表示强制使用自带构建），`REVIEW_HEADED=1` 强制有窗口运行。视觉效果仍需在浏览器中实际查看，尤其是快速切换、模型归位、文档揭示及查看器进出过渡。
 
 ### 交付与验收
 
