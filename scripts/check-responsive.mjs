@@ -1,6 +1,7 @@
 // Browser regression against the actual WebGL application. Run with local Vite.
 import { loadPlaywright } from "./playwright.mjs";
 import { launchChromium, seedPreferences } from "./browser-launch.mjs";
+import { installSnapshot, snapshot as stats } from "./page-snapshot.mjs";
 import assert from "node:assert/strict";
 import { INSPECTION_LIFT } from "../src/motion.ts";
 import { mkdir, writeFile } from "node:fs/promises";
@@ -13,7 +14,6 @@ const browser=engine==='webkit'?await webkit.launch({headless:true}):await launc
 const cases=engine==='webkit' ? [['safari-portrait',390,844,true],['safari-landscape',844,390,true]] :
   [['desktop',1920,1080,false],['laptop',1440,900,false],['wide',2560,1080,false],['ultrawide',3840,1080,false],['tablet',1280,1024,false],['landscape',844,390,true],['portrait',390,844,true],['small',320,568,true],['short-landscape',568,320,true]];
 const report=[];
-const stats=page=>page.evaluate(()=>window.rhine.stats());
 async function bounds(page,selectors){return page.evaluate(selectors=>Object.fromEntries(selectors.map(s=>{const el=document.querySelector(s),r=el.getBoundingClientRect();return [s,{x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom}]})),selectors)}
 async function inside(page,selectors,w,h){const rects=await bounds(page,selectors);for(const [s,r] of Object.entries(rects))assert.ok(r.x>=-1&&r.y>=-1&&r.right<=w+1&&r.bottom<=h+1,`${s} outside ${w}x${h}: ${JSON.stringify(r)}`);return rects}
 async function touch(page,points){
@@ -34,10 +34,11 @@ for(const [name,width,height,mobile] of cases.filter(([name])=>!process.env.REVI
  const context=await browser.newContext({viewport:{width,height},hasTouch:mobile,isMobile:mobile,deviceScaleFactor:mobile?2:1});
  // Enter the archive without opening an audio device; motion stays on.
  await seedPreferences(context,{sound:false,music:false});
+ await installSnapshot(context);
  const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto(`${base}/?scene=archive`);
- await page.waitForFunction(()=>window.rhine?.stats().ready,null,{timeout:60000});
- await page.waitForFunction(()=>window.rhine.stats().extraction>=.395,null,{timeout:60000});await page.waitForTimeout(300);
+ await page.waitForFunction(()=>window.readSnapshot().ready,null,{timeout:60000});
+ await page.waitForFunction(()=>window.readSnapshot().extraction>=.395,null,{timeout:60000});await page.waitForTimeout(300);
  const entry={name,viewport:{width,height},errors};report.push(entry);
  entry.archive=await inside(page,['.brand','.system-nav','.read-file','.archive-navigation','.column-navigation','.archive-counter'],width,height);
  await page.screenshot({path:resolve(output,`${name}-archive-final.png`)});
@@ -46,12 +47,12 @@ for(const [name,width,height,mobile] of cases.filter(([name])=>!process.env.REVI
    const y=Math.round(height*(width>height?.4:.25)),x=Math.round(width*.4);
    let vector=(await stats(page)).dragProjection.lane;
    await touch(page,[[x,y],[x+vector.x*.4,y+vector.y*.4],[x+vector.x*.8,y+vector.y*.8]]);
-   await page.waitForFunction(()=>!rhine.stats().archiveMomentum);
+   await page.waitForFunction(()=>!window.readSnapshot().archiveMomentum);
    assert.equal((await stats(page)).selectedCell.lane,before.selectedCell.lane+1,'Projected column travel advances one column');
    const row=(await stats(page)).selectedCell.row;
    vector=(await stats(page)).dragProjection.row;
    await touch(page,[[x,y],[x+vector.x*.4,y+vector.y*.4],[x+vector.x*.8,y+vector.y*.8]]);
-   await page.waitForFunction(()=>!rhine.stats().archiveMomentum);
+   await page.waitForFunction(()=>!window.readSnapshot().archiveMomentum);
    assert.equal((await stats(page)).selectedCell.row,row+1,'Projected depth travel advances one file');
  }
  // Eight steps traverse the seam without changing the remembered content.
@@ -61,7 +62,7 @@ for(const [name,width,height,mobile] of cases.filter(([name])=>!process.env.REVI
  assert.equal((await stats(page)).selectedCell.row,loop.selectedCell.row+8);
  await page.waitForTimeout(2000);
  await page.locator('.read-file').click();
- await page.waitForFunction(()=>window.rhine.stats().decryption.clarity===1,null,{timeout:60000});await page.waitForTimeout(1400);
+ await page.waitForFunction(()=>window.readSnapshot().decryption.clarity===1,null,{timeout:60000});await page.waitForTimeout(1400);
  entry.detail=await inside(page,['.back-button','.viewer-open','.detail-content'],width,height);
  entry.detailStats=await stats(page);
  await page.screenshot({path:resolve(output,`${name}-detail-final.png`)});

@@ -42,7 +42,7 @@ export type FieldInputs = {
   flatMix: number;
   selectionWave: boolean;
   pulses: readonly FieldPulse[];
-  /** Authored selection ripple, so a review page can swap the envelope. */
+  /** Authored selection ripple, so the caller can swap the envelope. */
   selectionPulse: (distance: number, age: number) => number;
   deferSelectionPulse: boolean;
   pulseGain: number;

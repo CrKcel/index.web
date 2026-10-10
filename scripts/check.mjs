@@ -18,7 +18,6 @@ const offline = [
   "check-viewport.mjs",
   "check-archive-camera.mjs",
   "check-archive-field.mjs",
-  "check-archive-stats.mjs",
   "check-boot-frame.mjs",
   "check-fonts.mjs",
   "check-motion.mjs",

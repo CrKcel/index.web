@@ -1,6 +1,7 @@
 // Preserve an earlier production dist, then set PWA_PREVIOUS_DIST to its path.
 import { loadPlaywright } from './playwright.mjs';
 import { launchChromium, browserChannel } from './browser-launch.mjs';
+import { installSnapshot, snapshot as stats } from './page-snapshot.mjs';
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {readFile, writeFile, mkdir} from 'node:fs/promises';
@@ -28,8 +29,12 @@ const report={channel,version:browser.version(),release:metadata.version,checks:
 try {
  const context=await browser.newContext({viewport:{width:1440,height:900}});
  await context.addInitScript(()=>{if(!localStorage.getItem('rhine-settings'))localStorage.setItem('rhine-settings',JSON.stringify({reduced:true,sound:false,music:false}))});
+ await installSnapshot(context);
  const page=await context.newPage();page.on('pageerror',e=>report.errors.push(e.message));
- const ready=()=>page.waitForFunction(()=>window.rhine?.stats().ready&&document.documentElement.dataset.offlineReady==='true'&&navigator.serviceWorker.controller,null,{timeout:90000});
+ // This check deliberately runs an earlier release, and that release predates
+ // the stage snapshot, so readiness waits on the offline marker the release has
+ // always published. The snapshot is only read once the new release is active.
+ const ready=()=>page.waitForFunction(()=>document.documentElement.dataset.offlineReady==='true'&&navigator.serviceWorker.controller,null,{timeout:90000});
  const base='http://127.0.0.1:5192/';
  // The service worker names its cache after the release it precached, so this is
  // how the test tells which build the browser is actually running.
@@ -48,7 +53,7 @@ try {
  const recovered=await releaseCaches();
  assert.ok(recovered.includes(metadata.version)&&recovered.length===1,'Recovery activates exactly the new release');
  assert.equal(await page.evaluate(()=>localStorage.getItem('rhine-saved')),'["X-001"]');
- assert.equal(await page.evaluate(()=>window.rhine.stats().motion.reduced),true);
+ assert.equal((await stats(page)).motion.reduced,true);
  report.checks.push('network recovery replaces the old page and preserves bookmarks and motion preference');
  broken=true;
  await page.goto(base+'update.html');await page.getByRole('button',{name:'更新并返回'}).click();

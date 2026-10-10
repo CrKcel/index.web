@@ -4,13 +4,9 @@ export function openingLayout(width: number, height: number) {
   const scale = Math.min(height / 1080, width / 1280);
   return { width: width / scale, height: height / scale, scale, kind: "opening" as const };
 }
-export function viewportLayout(width: number, height: number, coarse: boolean, cinematic = false) {
+export function viewportLayout(width: number, height: number, coarse: boolean) {
   width = Math.max(1, width);
   height = Math.max(1, height);
-  if (cinematic) return {
-    width: 1920, height: 1080, scale: Math.min(width / 1920, height / 1080),
-    kind: "cinematic" as const,
-  };
   const portrait = width / height < 1.05;
   const compact = portrait || width < 1100 || (coarse && height < 600);
   const scale = compact ? 1 : height / 1080;

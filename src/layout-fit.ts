@@ -10,8 +10,6 @@ export type FitHost = {
   stage: HTMLElement;
   viewport: HTMLElement;
   mode: FitMode;
-  /** Review pages pin the reference timeline instead of the opening layout. */
-  reference: boolean;
   /** Coarse pointers get the touch layout. */
   coarse: boolean;
   /** Called with the layout key when the composition actually changed. */
@@ -25,9 +23,9 @@ let previousLayout = "";
 export function fitLayout(host: FitHost) {
   const { stage, viewport, mode } = host;
   const { width, height, scale, kind } =
-    mode === "boot" && !host.reference
+    mode === "boot"
       ? openingLayout(viewport.clientWidth, viewport.clientHeight)
-      : viewportLayout(viewport.clientWidth, viewport.clientHeight, host.coarse, mode === "boot");
+      : viewportLayout(viewport.clientWidth, viewport.clientHeight, host.coarse);
   stage.style.width = `${width}px`;
   stage.style.height = `${height}px`;
   stage.style.transform = `translate(-50%, -50%) scale(${scale})`;

@@ -25,7 +25,7 @@ import {
 import { archiveFraming } from "./viewport-layout";
 import { type DragAxis, type DragProjection } from "./archive-drag";
 import { assetUrl as publicAsset } from "./asset-url";
-import { fullMotion, reducedMotion, type MotionPreferences } from "./motion-preferences";
+import { fullMotion, type MotionPreferences } from "./motion-preferences";
 import {
   extraction,
   baselineSelectionWave,
@@ -41,15 +41,6 @@ import { ArchiveField, type FieldInputs } from "./archive-field";
 import { ArchivePointer, type ArchivePointerHost } from "./archive-pointer";
 import { ArchiveRenderGraph } from "./archive-render";
 import { ArchiveCassette } from "./archive-cassette";
-import {
-  glassClarityOf,
-  indexDimOf,
-  poolBounds,
-  projectPoint,
-  rounded,
-  roundedVector,
-  selectionPhase,
-} from "./archive-stats";
 
 /**
  * Upper bound on how fast the archive plane may travel, in world units per
@@ -57,6 +48,58 @@ import {
  * can move the array faster than the authored browsing pace.
  */
 const MAX_PLANE_SPEED = 4.5;
+
+/** Rounded reading, so two snapshots compare equal despite float noise. */
+const rounded = (value: number, digits = 4) =>
+  Math.round(value * 10 ** digits) / 10 ** digits;
+
+/** Rounded copy of a vector, for stable snapshots. */
+const roundedVector = (value: THREE.Vector3, digits = 4) =>
+  value.toArray().map((component) => rounded(component, digits));
+
+/** Project a model-space point into container pixels. */
+function projectPoint(
+  model: THREE.Object3D,
+  camera: THREE.Camera,
+  width: number,
+  height: number,
+  x: number,
+  y: number,
+  z: number,
+): [number, number] {
+  const point = model.localToWorld(new THREE.Vector3(x, y, z)).project(camera);
+  return [
+    Math.round(((point.x + 1) * width) / 2),
+    Math.round(((1 - point.y) * height) / 2),
+  ];
+}
+
+/** Lane and row bounds of the candidate pool. */
+function poolBounds(cells: readonly ArchiveCell[]) {
+  return {
+    minLane: Math.min(...cells.map((cell) => cell.lane)),
+    maxLane: Math.max(...cells.map((cell) => cell.lane)),
+    minRow: Math.min(...cells.map((cell) => cell.row)),
+    maxRow: Math.max(...cells.map((cell) => cell.row)),
+  };
+}
+
+/** Which stage of the selection animation the array is showing. */
+const selectionPhase = (
+  pending: ArchiveCell | null,
+  pulses: readonly unknown[],
+) => (pending ? "lifting" : pulses.length ? "wave" : "settled");
+
+/** Dim applied to one file's index inlay, read back from its material hooks. */
+const indexDimOf = (group: THREE.Object3D) =>
+  group.children.find((child) => child.userData.surface === "Index_Inlay")
+    ?.userData.subduedIndex?.value;
+
+/** Glass clarity of one file, read back from its material hooks. */
+const glassClarityOf = (group: THREE.Object3D) =>
+  group.children.find((child) => child.userData.surface === "Frosted_Polymer")
+    ?.userData.glassClarity?.value;
+
 export class ArchiveScene {
   private presence = 1;
   private presenceTarget = 1;
@@ -224,8 +267,6 @@ export class ArchiveScene {
   private loaded = false;
   private motion: MotionPreferences = fullMotion();
   private quality = normalizeQuality(undefined);
-  private displayHeight = 0;
-  private layoutKind = "";
   onSelect?: (index: number, cell?: ArchiveCell) => void;
   onHover?: (index: number | null) => void;
   onNavigate?: (axis: "row" | "lane", direction: number) => void;
@@ -355,8 +396,6 @@ export class ArchiveScene {
       if (this.rotation !== 0) this.returnY = this.cassette.group.position.y;
     } else this.returnY = null;
   }
-  // Legacy review pages use the old whole-scene toggle.
-  setReduced(value: boolean) { this.setMotion(value ? reducedMotion() : fullMotion()); }
   setMotion(value: MotionPreferences) {
     if ((!value.pointerParallax || !value.dragMomentum) && (this.motion.pointerParallax || this.motion.dragMomentum)) this.pointerControl.cancel();
     if (!value.dragMomentum) {
@@ -502,17 +541,6 @@ export class ArchiveScene {
   resize() {
     const w = this.container.clientWidth,
       h = this.container.clientHeight;
-    const kind = this.container.closest<HTMLElement>("[data-layout]")?.dataset.layout ?? "";
-    const displayHeight = this.container.getBoundingClientRect().height;
-    if (this.layoutKind === "cinematic" && kind !== "cinematic" && this.displayHeight > 0) {
-      // Removing letterboxing starts from the same apparent model size. The
-      // existing camera interpolation then carries it to the responsive anchor.
-      this.camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(
-        Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)) * displayHeight / this.displayHeight,
-      ));
-    }
-    this.displayHeight = displayHeight;
-    this.layoutKind = kind;
     this.render.resize(this.quality);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
@@ -1039,7 +1067,6 @@ export class ArchiveScene {
       selectionPhase: selectionPhase(this.pendingPulse, this.pulses),
       pendingPulse: this.pendingPulse ? { ...this.pendingPulse } : null,
       pulses: this.pulses.map((pulse) => ({ ...pulse })),
-      referenceTime: rounded(this.scanTime + 5, 2),
       selectedSlot: this.selectedSlot,
       selectedLane: Math.floor(this.selectedSlot / 32),
       selectedCell: { ...this.selectedCell },

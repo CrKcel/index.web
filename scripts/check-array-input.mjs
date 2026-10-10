@@ -1,5 +1,6 @@
 import { loadPlaywright } from "./playwright.mjs";
 import { launchChromium, seedPreferences } from "./browser-launch.mjs";
+import { installSnapshot, snapshot as stats } from "./page-snapshot.mjs";
 import assert from "node:assert/strict";
 import { COLUMN_SPACING } from "../src/archive-loop.ts";
 import { mkdir, writeFile } from "node:fs/promises";
@@ -9,14 +10,13 @@ const browser = await launchChromium(chromium);
 const output = resolve(".tools/array-input");
 await mkdir(output, { recursive: true });
 const report = [];
-const stats = (page) => page.evaluate(() => window.rhine.stats());
 const settle = (page) => page.waitForTimeout(2200);
 // Plane travel is speed limited, so a gesture needs a moment before the array
 // reaches the projected pointer destination.
 const projected = (page) =>
   page.waitForFunction(
     () => {
-      const s = window.rhine.stats();
+      const s = window.readSnapshot();
       return (
         s.dragTarget !== null &&
         Math.abs(s.columnCamera - s.dragTarget.lane) < 0.05 &&
@@ -41,6 +41,7 @@ try {
     });
     // Enter the archive without the audio entry gate, motion stays on.
     await seedPreferences(context, { sound: false, music: false });
+    await installSnapshot(context);
     const page = await context.newPage(),
       errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
@@ -48,12 +49,12 @@ try {
       `${process.env.REVIEW_URL || "http://127.0.0.1:5204"}/?scene=archive`,
     );
     await page.waitForFunction(
-      () => window.rhine?.stats().ready,
+      () => window.readSnapshot().ready,
       null,
       { timeout: 60000 },
     );
     await page.waitForFunction(
-      () => window.rhine.stats().extraction >= 0.399,
+      () => window.readSnapshot().extraction >= 0.399,
       null,
       { timeout: 60000 },
     );
@@ -287,7 +288,7 @@ try {
       interrupted.selectedCell.row + 1,
     );
     await page.locator(".read-file").click();
-    await page.waitForFunction(() => window.rhine.stats().canInspect, null, {
+    await page.waitForFunction(() => window.readSnapshot().canInspect, null, {
       timeout: 30000,
     });
     const detail = await stats(page);

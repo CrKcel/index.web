@@ -1,5 +1,6 @@
 import { loadPlaywright } from "./playwright.mjs";
 import { launchChromium, seedPreferences } from "./browser-launch.mjs";
+import { installSnapshot, snapshot as stats } from "./page-snapshot.mjs";
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
@@ -7,13 +8,12 @@ const { chromium } = await loadPlaywright();
 const browser = await launchChromium(chromium);
 const report = [];
 await mkdir(".tools/array-input", { recursive: true });
-const stats = (page) => page.evaluate(() => rhine.stats());
 // Plane travel is speed limited, so a gesture needs a moment before the array
 // reaches the projected pointer destination.
 const projected = (page) =>
   page.waitForFunction(
     () => {
-      const s = window.rhine.stats();
+      const s = window.readSnapshot();
       return (
         s.dragTarget !== null &&
         Math.abs(s.columnCamera - s.dragTarget.lane) < 0.05 &&
@@ -40,6 +40,7 @@ try {
     });
     // Enter the archive without the audio entry gate, motion stays on.
     await seedPreferences(context, { sound: false, music: false });
+    await installSnapshot(context);
     const page = await context.newPage(),
       errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
@@ -47,7 +48,7 @@ try {
       `${process.env.REVIEW_URL || "http://127.0.0.1:5204"}/?scene=archive`,
     );
     await page.waitForFunction(
-      () => window.rhine?.stats().extraction >= 0.399,
+      () => window.readSnapshot().extraction >= 0.399,
       null,
       { timeout: 60000 },
     );
@@ -130,7 +131,7 @@ try {
             "Depth drag keeps its column",
           );
         await up();
-        await page.waitForFunction(() => !rhine.stats().archiveMomentum, null, {
+        await page.waitForFunction(() => !window.readSnapshot().archiveMomentum, null, {
           timeout: 12000,
         });
         results.push({ axis, sign, direction, mapping: during.dragMapping });
@@ -165,7 +166,7 @@ try {
       );
     }
     await up();
-    await page.waitForFunction(() => !rhine.stats().archiveMomentum);
+    await page.waitForFunction(() => !window.readSnapshot().archiveMomentum);
     results.push({ screenPath: paths, checks: "free turns passed" });
     }
     if (!mobile) {

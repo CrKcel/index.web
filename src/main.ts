@@ -54,7 +54,6 @@ import {
   bootStep,
   bootTitle,
 } from "./boot-frame";
-import { installReviewApi } from "./review-api";
 import {
   detailMarkup,
   tabPanelMarkup,
@@ -91,26 +90,9 @@ let modal: ModalKind | null = null,
   searchQuery = "",
   filter = "全部档案";
 let activeTab = "overview";
-const reviewParams = new URLSearchParams(location.search);
-let frozenTime =
-  reviewParams.get("freeze") === "1"
-    ? Number(reviewParams.get("time") ?? 0)
-    : null;
-if (reviewParams.get("review") === "1") {
-  $("#stage").dataset.review = "true";
-  window.addEventListener("message", (event) => {
-    if (
-      event.origin !== location.origin ||
-      event.source !== window.parent ||
-      event.data?.type !== "rhine-review-frame"
-    )
-      return;
-    const t = Number(event.data.time);
-    if (!Number.isFinite(t) || t < 0 || t >= 35) return;
-    frozenTime = t;
-    if (ready && mode !== "boot") setMode("boot");
-  });
-}
+// `?scene=` is the only local shortcut: it hands the terminal straight to the
+// archive or the detail view instead of playing the opening first.
+const sceneParams = new URLSearchParams(location.search);
 let toastTimer: ReturnType<typeof setTimeout>;
 let previousFocus: HTMLElement | null = null;
 const detailTransition = new SurfaceTransition($("#detail-ui"), undefined, 180, 180);
@@ -148,12 +130,9 @@ const audio = new TerminalAudio();
 let musicSuppressed = false;
 function configureAudio() { audio.configure({ ...prefs, music: prefs.music && !musicSuppressed }); }
 configureAudio();
-const reviewEntry = reviewParams.has("scene") || reviewParams.has("time") || reviewParams.get("review") === "1";
-// The opening holds on its composed welcome card until the archive exists; the
-// reference reviews drive their own clock and never wait on this one.
+// The opening holds on its composed welcome card until the archive exists.
 const WELCOME_HOLD = 20.6;
 let bootHeld = false;
-let audioPreview = false, audioPreviewRequest = 0;
 let scene: ArchiveScene | undefined;
 let viewer: ModelViewer | undefined;
 const accessLog: { id: string; time: string }[] = [];
@@ -199,7 +178,6 @@ function fit() {
     stage: $("#stage"),
     viewport: $("#viewport"),
     mode,
-    reference: reviewParams.has("time") || reviewParams.get("review") === "1",
     coarse: matchMedia("(pointer: coarse)").matches,
     composed: () => {
       scene?.resize();
@@ -236,11 +214,6 @@ function setMode(next: Mode) {
   if (next === "detail" && mode !== "detail") recordAccess();
   mode = next;
   audio.setScene(next);
-  if (next !== "boot" && audioPreview) {
-    audioPreview = false;
-    audioPreviewRequest++;
-    configureAudio();
-  }
   $("#stage").dataset.mode = next;
   if (previousMode !== next) fit();
   $("#boot").inert = next !== "boot";
@@ -345,20 +318,19 @@ function updateSelection(navigation?: ArchiveNavigation) {
   });
   $("#saved-count").textContent = String(saved.size).padStart(2, "0");
 }
-function replayBoot(forcePreview = false) {
+function replayBoot() {
   if (!ready) return;
-  closeModal(() => replayBootAfterModal(forcePreview));
+  closeModal(() => replayBootAfterModal());
 }
-function replayBootAfterModal(forcePreview: boolean) {
+function replayBootAfterModal() {
   bootStart = performance.now() / 1000 - 1.76;
-  frozenTime = null;
   lastStep = "";
-  setMode(!motionActive("boot") && !forcePreview ? "archive" : "boot");
+  setMode(motionActive("boot") ? "boot" : "archive");
   audio.restartBoot();
   scene?.select(0);
   selected = 0;
   updateSelection();
-  if (!forcePreview) audio.play("ui-tick");
+  audio.play("ui-tick");
 }
 function openFile() {
   if (!ready) return;
@@ -643,19 +615,15 @@ function setBootHold(held: boolean) {
  *  stops on the composed welcome card instead of running past it, so the rest
  *  of the opening resumes from there once the scene is ready. */
 function bootClock(time: number) {
-  if (frozenTime !== null) {
-    setBootHold(false);
-    return frozenTime;
-  }
   const elapsed = time - bootStart;
   // With the opening switched off, the composed card is a still loading screen
   // rather than a timeline that would replay the animation the reader disabled.
-  if (!motionActive("boot") && !ready && !reviewEntry) {
+  if (!motionActive("boot") && !ready) {
     bootStart = time - WELCOME_HOLD;
     setBootHold(true);
     return WELCOME_HOLD;
   }
-  if (ready || reviewEntry || elapsed <= WELCOME_HOLD) {
+  if (ready || elapsed <= WELCOME_HOLD) {
     setBootHold(false);
     return elapsed;
   }
@@ -665,7 +633,7 @@ function bootClock(time: number) {
 }
 
 function bootFrame(t: number) {
-  audio.updateBoot(t, frozenTime !== null || bootHeld);
+  audio.updateBoot(t, bootHeld);
   const step = bootStep(t, bootSequence.update(t).step);
   if (step !== lastStep) {
     $("#stage").dataset.boot = step;
@@ -683,6 +651,24 @@ function bootFrame(t: number) {
 
 const inspectionOverlay = new InspectionOverlay();
 const documentDecryption = new DocumentDecryption();
+
+/** The page and the scene publish one read-only snapshot as JSON on the stage,
+ *  the way the model viewer publishes its own on `.model-viewer`. The browser
+ *  regressions read it; nothing else depends on it. Written every frame because
+ *  a gesture check has to observe the state its own pointer move just produced. */
+function publishSnapshot() {
+  $("#stage").dataset.stats = JSON.stringify({
+    ...scene?.getStats(),
+    fps: Math.round(fps),
+    mode,
+    ready,
+    hold: bootHeld,
+    motion: { reduced: motionIsReduced(), preset: prefs.motionPreset },
+    bootTime: mode === "boot" ? performance.now() / 1000 - bootStart : null,
+    selected: records[selected].id,
+    audio: audio.stats(),
+  });
+}
 
 let lastTime = 0,
   frameCount = 0,
@@ -723,8 +709,8 @@ function frame(ms: number) {
     frameStart = ms;
     frameCount = 0;
     $("#three-scene").dataset.fps = String(Math.round(fps));
-    $("#three-scene").dataset.renderStats = JSON.stringify(scene?.getStats() ?? { loaded: false, drawCalls: 0, triangles: 0 });
   }
+  publishSnapshot();
   requestAnimationFrame(frame);
 }
 function bindScene(scene: ArchiveScene) {
@@ -769,10 +755,10 @@ async function start() {
     savePrefs();
     ready = true;
     select(0);
-    // The reference shortcuts hand the terminal straight to their mode; the
+    // The `?scene=` shortcuts hand the terminal straight to their mode; the
     // normal path only leaves the opening when the reader asks for the array.
-    if (reviewParams.get("scene") === "archive" || (!motionActive("boot") && !reviewParams.has("time"))) setMode("archive");
-    if (reviewParams.get("scene") === "detail") setMode("detail");
+    if (sceneParams.get("scene") === "archive" || !motionActive("boot")) setMode("archive");
+    if (sceneParams.get("scene") === "detail") setMode("detail");
   } catch (error) {
     console.error(error);
     setBootHold(false);
@@ -787,54 +773,11 @@ updateSelection();
 // The page opens itself: the calibrated opening starts on the first frame while
 // the archive model and the score stream in behind it. Nothing here waits for
 // audio, and the opening clock only waits for the scene.
-bootStart = performance.now() / 1000 - (reviewParams.has("time") ? Number(reviewParams.get("time")) : 1.76);
+bootStart = performance.now() / 1000 - 1.76;
 audio.restartBoot();
 setMode("boot");
 $("#boot-error").querySelector("button")!.addEventListener("click", () => location.reload());
 if (prefs.music) void audio.prepareMusic().catch(() => { /* Playback retries on the next activation. */ });
 requestAnimationFrame(frame);
 void start();
-// Deterministic review controls: the running application, never a video surrogate.
-installReviewApi({
-  ready: () => ready,
-  stats: () => ({
-    ...scene?.getStats(),
-    fps: Math.round(fps),
-    mode,
-    ready,
-    hold: bootHeld,
-    startup: ready ? "started" : "loading",
-    motion: { reduced: motionIsReduced(), preset: prefs.motionPreset },
-    bootTime: mode === "boot" ? (frozenTime ?? performance.now() / 1000 - bootStart) + 5 : null,
-    selected: records[selected].id,
-    saved: [...saved],
-    audio: audio.stats(),
-  }),
-  audio: () => audio,
-  preferences: () => ({
-    sound: prefs.sound,
-    music: prefs.music,
-    soundVolume: prefs.soundVolume,
-    musicVolume: prefs.musicVolume,
-  }),
-  beginPreview: () => {
-    const request = ++audioPreviewRequest;
-    audioPreview = true;
-    return request;
-  },
-  currentPreview: () => audioPreviewRequest,
-  setPreview: (on) => {
-    audioPreview = on;
-  },
-  resetAudio: () => configureAudio(),
-  replayBoot: (forcePreview) => replayBoot(forcePreview),
-  startBootAt: (t) => {
-    setMode("boot");
-    bootStart = performance.now() / 1000 - t;
-    lastStep = "";
-  },
-  setMode: (next) => setMode(next),
-  openFile: () => openFile(),
-  select: (index) => select(index),
-});
 if (import.meta.hot) import.meta.hot.dispose(() => audio.dispose());

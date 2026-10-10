@@ -1,6 +1,7 @@
 // Uses a disposable HTTP server to exercise real service-worker updates/failures.
 import { loadPlaywright } from './playwright.mjs';
 import { launchChromium } from './browser-launch.mjs';
+import { installSnapshot } from './page-snapshot.mjs';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
@@ -22,8 +23,9 @@ await new Promise(resolve=>server.listen(5191,'127.0.0.1',resolve));
 const browser=await launchChromium(chromium);
 const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
 await context.addInitScript(()=>{if(!localStorage.getItem('rhine-settings'))localStorage.setItem('rhine-settings',JSON.stringify({reduced:true,sound:false,music:false}))});
+await installSnapshot(context);
 const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
-const ready=()=>page.waitForFunction(()=>window.rhine?.stats().ready&&document.documentElement.dataset.offlineReady==='true'&&navigator.serviceWorker.controller,null,{timeout:90000});
+const ready=()=>page.waitForFunction(()=>window.readSnapshot().ready&&document.documentElement.dataset.offlineReady==='true'&&navigator.serviceWorker.controller,null,{timeout:90000});
 const report={version:metadata.version,bytes:metadata.bytes,files:metadata.files.length,checks:[],errors};
 try{
  await page.goto('http://127.0.0.1:5191/?scene=archive');await ready();
@@ -37,7 +39,7 @@ try{
  await page.evaluate(async()=>{await caches.open('unrelated-app');localStorage.setItem('rhine-saved','["X-001"]')});
  report.checks.push('manifest, installation, atomic full-resource cache');
  await context.setOffline(true);await page.reload();await ready();
- await page.locator('.read-file').click();await page.waitForFunction(()=>window.rhine.stats().decryption.clarity===1);
+ await page.locator('.read-file').click();await page.waitForFunction(()=>window.readSnapshot().decryption.clarity===1);
  // Exporting offline must still hand the record to the browser as a download.
  const [download]=await Promise.all([page.waitForEvent('download'),page.locator('.export-button').click()]);
  const chunks=[];for await(const chunk of await download.createReadStream())chunks.push(chunk);

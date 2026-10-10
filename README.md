@@ -15,7 +15,6 @@
 | [`src/main.ts`](src/main.ts) | 页面状态、模式切换与动作实现 |
 | [`src/controls.ts`](src/controls.ts) | 事件委托：设置控件、目录按钮、快捷键与模态焦点陷阱 |
 | [`src/boot-frame.ts`](src/boot-frame.ts) | 开场时间轴的纯函数：步进阈值、淡入与运镜通道 |
-| [`src/review-api.ts`](src/review-api.ts) | `window.rhine` 评审接口与音频预览协议 |
 | [`src/stage-markup.ts`](src/stage-markup.ts)、[`src/detail-markup.ts`](src/detail-markup.ts)、[`src/directory-markup.ts`](src/directory-markup.ts)、[`src/settings-markup.ts`](src/settings-markup.ts) | 舞台、档案正文、检索目录与设置面板的标记 |
 | [`src/prefs-store.ts`](src/prefs-store.ts)、[`src/layout-fit.ts`](src/layout-fit.ts)、[`src/rolling-widgets.ts`](src/rolling-widgets.ts) | 偏好持久化、舞台标定与滚动数字/文字组件 |
 | [`src/boot.ts`](src/boot.ts)、[`src/boot-motion.ts`](src/boot-motion.ts) | 开场界面与逐帧时间轴 |
@@ -25,7 +24,6 @@
 | [`src/archive-pointer.ts`](src/archive-pointer.ts) | 指针、滚轮与拖拽手势、惯性交接与悬停采样 |
 | [`src/archive-render.ts`](src/archive-render.ts) | 合成通道链、画质开关与帧去重 |
 | [`src/archive-cassette.ts`](src/archive-cassette.ts) | 模型装配、烘焙代理、标签画布与实例打包 |
-| [`src/archive-stats.ts`](src/archive-stats.ts) | 评审读数：投影、池边界、选中阶段与材质钩子回读 |
 | [`src/model-viewer.ts`](src/model-viewer.ts) | 独立模型查看器与拆解动画 |
 | [`src/decryption.ts`](src/decryption.ts)、[`src/document-decryption.ts`](src/document-decryption.ts) | 模型解密轨迹与正文同步揭示 |
 | [`src/audio.ts`](src/audio.ts) | 音频设备生命周期、手势解锁、音效节流与开场提示调度 |
@@ -49,9 +47,9 @@
 npm run check  # 免浏览器的全部检查，清单见 scripts/check.mjs，也是 CI 跑的那一套
 ```
 
-`npm run check` 覆盖内容规则、视口与取景、相机取景端点、表面波场、评审读数、开场帧、字体栈一致性、运动与循环、拖拽与惯性、可见性覆盖、外观与解密轨迹、外壳与装配、画质上限、渲染去重、主题波、音效与配乐逻辑与 PWA 重定向。检查脚本直接运行 `src/` 的 TypeScript 源码，需要 Node 24 或更高版本；清单外的 `scripts/check-*.mjs` 会让运行器直接报错。
+`npm run check` 覆盖内容规则、视口与取景、相机取景端点、表面波场、开场帧、字体栈一致性、运动与循环、拖拽与惯性、可见性覆盖、外观与解密轨迹、外壳与装配、画质上限、渲染去重、主题波、音效与配乐逻辑与 PWA 重定向。检查脚本直接运行 `src/` 的 TypeScript 源码，需要 Node 24 或更高版本；清单外的 `scripts/check-*.mjs` 会让运行器直接报错。
 
-浏览器回归默认不跑：它驱动真实 Chrome 等待动画实时推进，一轮约 6 分钟，只有改动落在浏览器行为上时才运行，通常先用 `--only` 缩小范围。运行器会自己在 `127.0.0.1:5204` 提供刚构建的 `dist`，并在 `.tools/pwa-previous` 保留一份较早的发行副本供 `check-pwa-recovery` 比对，最后逐项打印结果与耗时；已有 `npm run dev` / `npm run preview` 时用 `REVIEW_URL` 指向它，已有旧发行包时用 `PWA_PREVIOUS_DIST` 覆盖快照。
+浏览器回归默认不跑：它驱动真实 Chrome 等待动画实时推进，一轮约 6 分钟，只有改动落在浏览器行为上时才运行，通常先用 `--only` 缩小范围。运行器会自己在 `127.0.0.1:5204` 提供刚构建的 `dist`，并在 `.tools/pwa-previous` 保留一份较早的发行副本供 `check-pwa-recovery` 比对，最后逐项打印结果与耗时；已有 `npm run dev` / `npm run preview` 时用 `REVIEW_URL` 指向它，已有旧发行包时用 `PWA_PREVIOUS_DIST` 覆盖快照。检查读取 `#stage[data-stats]` 上由页面每帧写入的只读 JSON 快照（定义见 [`scripts/page-snapshot.mjs`](scripts/page-snapshot.mjs)），应用本身不暴露任何 JavaScript 测试接口。
 
 ```sh
 npm run check:browser                                        # 全部浏览器回归，约 6 分钟
@@ -68,7 +66,6 @@ node scripts/check-browser.mjs --only=responsive,momentum    # 只跑受影响�
 | --- | --- |
 | `/?scene=archive` | 直接进入档案阵列 |
 | `/?scene=detail` | 直接进入档案详情 |
-| `/?time=28&freeze=1` | 固定在参考时间轴的指定时刻 |
 
 ### Blender 工程
 

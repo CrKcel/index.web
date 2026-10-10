@@ -36,7 +36,6 @@ export class InspectionOverlay {
         ? "1"
         : "0";
     this.root.dataset.phase = frame.phase;
-    this.root.dataset.referenceTime = frame.time.toFixed(3);
     this.line.setAttribute(
       "d",
       inspectionSegments(frame)

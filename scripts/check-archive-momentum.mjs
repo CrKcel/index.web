@@ -1,14 +1,14 @@
 import { loadPlaywright } from "./playwright.mjs";
 import { launchChromium, seedPreferences } from "./browser-launch.mjs";
+import { installSnapshot, snapshot as stats } from "./page-snapshot.mjs";
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 const { chromium } = await loadPlaywright();
 const browser = await launchChromium(chromium);
 const report = [];
-const stats = (page) => page.evaluate(() => window.rhine.stats());
 const rest = (page) =>
-  page.waitForFunction(() => !window.rhine.stats().archiveMomentum, null, {
+  page.waitForFunction(() => !window.readSnapshot().archiveMomentum, null, {
     timeout: 12000,
   });
 // Plane travel is speed limited, so a gesture needs a moment before the array
@@ -16,7 +16,7 @@ const rest = (page) =>
 const projected = (page) =>
   page.waitForFunction(
     () => {
-      const s = window.rhine.stats();
+      const s = window.readSnapshot();
       return (
         s.dragTarget !== null &&
         Math.abs(s.columnCamera - s.dragTarget.lane) < 0.05 &&
@@ -41,6 +41,7 @@ try {
     });
     // Enter the archive without the audio entry gate, motion stays on.
     await seedPreferences(context, { sound: false, music: false });
+    await installSnapshot(context);
     const page = await context.newPage(),
       errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
@@ -48,7 +49,7 @@ try {
       `${process.env.REVIEW_URL || "http://127.0.0.1:5204"}/?scene=archive`,
     );
     await page.waitForFunction(
-      () => window.rhine?.stats().extraction >= 0.399,
+      () => window.readSnapshot().extraction >= 0.399,
       null,
       { timeout: 60000 },
     );
@@ -190,7 +191,7 @@ try {
       () => !document.querySelector(".modal-backdrop"),
     );
     assert.equal(
-      await page.evaluate(() => window.rhine.stats().motion.reduced),
+      (await stats(page)).motion.reduced,
       true,
       "The reduced preset applies before the next gesture",
     );
