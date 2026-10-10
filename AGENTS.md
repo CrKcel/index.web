@@ -87,4 +87,4 @@ Wrangler：`npx wrangler dev` 本地开发，`npx wrangler deploy` 部署，`npx
 ## 画质与声音
 
 - 画质调整渲染精度与可选效果，默认采用原始预设，预设与参数见 `docs/DESIGN.md`。
-- 声音与音乐独立开关与音量；保留源谱与音色生成脚本，来源与处理记录见 `public/audio/README.md`。
+- 声音与音乐独立开关与音量；音源与处理记录见 `public/audio/typing-source.json` 与 `public/audio/score.json`。
