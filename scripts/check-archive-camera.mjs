@@ -53,7 +53,7 @@ for (const axis of ["x", "y", "z"])
   );
 
 // Extraction zooms in: the reference opening is monotone in both lens and fov.
-const frames = [17.88, 18.88, 19.88, 20.88, 21.88, 22.88, 23.88, 24.88, 25.88, 30.88].map((time) => shot(time));
+const frames = [15.12, 16.12, 17.12, 18.12, 19.12, 20.12, 21.12, 22.12, 23.12, 28.12].map((time) => shot(time));
 for (let i = 1; i < frames.length; i++) {
   assert.ok(
     frames[i].distance >= frames[i - 1].distance,
@@ -71,7 +71,7 @@ close(planArchiveCamera({ ...base, detail: 1 }).distance, 72, "Extraction uses t
 close(planArchiveCamera({ ...base, detail: 1 }).fov, detailFov, "The extraction field of view matches the reference", 1e-6);
 
 // The whole authored timeline stays finite in every supported layout.
-for (let time = 6; time <= 35; time += 0.05) {
+for (let time = 6; time <= 32.24; time += 0.05) {
   for (const [width, height, layout] of [
     [1920, 1080, ""],
     [390, 844, "opening"],

@@ -8,12 +8,12 @@ import { archiveWave, cinematicField, settlingWave, columnStrength } from "../sr
 
 const base = {
   cinematic: false,
-  shot: 24.98,
-  now: 25.88,
+  shot: 22.22,
+  now: 23.12,
   shoulder: 12,
   laneFocus: 2,
   origin: { row: 0, lane: 0 },
-  scanTime: 24.98,
+  scanTime: 22.22,
   scanBlend: 0,
   idleGain: 0,
   flatMix: 0,
@@ -30,15 +30,15 @@ const at = (row, lane, overrides = {}) => fieldHeight({ ...base, ...overrides },
 
 // The reference opening hands the whole surface to the cinematic field.
 assert.equal(
-  at(14, 2, { cinematic: true, shot: 21.88 }),
-  cinematicField(14, 2, 21.88, base.shoulder, base.laneFocus),
+  at(14, 2, { cinematic: true, shot: 19.12 }),
+  cinematicField(14, 2, 19.12, base.shoulder, base.laneFocus),
   "A cinematic frame uses the authored opening field verbatim",
 );
 
 // Without the score the resting surface is the settling wave around the shoulder.
 assert.equal(
   at(13, 2),
-  settlingWave(13 - base.shoulder, 22.44) * columnStrength(2, base.laneFocus),
+  settlingWave(13 - base.shoulder, 19.68) * columnStrength(2, base.laneFocus),
   "The resting height is the settling wave at the authored width",
 );
 assert.equal(
@@ -51,10 +51,10 @@ assert.equal(
   at(13, 2, { scanBlend: 0.9, flatMix: 1 }),
   "A flattened surface no longer reads the entry scan",
 );
-// 19.38s is inside the authored entry-scan window; 24.98s is past it.
+// 16.62s is inside the authored entry-scan window; 22.22s is past it.
 const scanLift =
-  at(13, 2, { scanTime: 19.38, scanBlend: 0.7 }) - at(13, 2, { scanTime: 19.38, scanBlend: 0 });
-assert.ok(Math.abs(scanLift - archiveWave(13, 2, 19.38) * 0.7) < 1e-12, "The entry scan contributes its authored wave");
+  at(13, 2, { scanTime: 16.62, scanBlend: 0.7 }) - at(13, 2, { scanTime: 16.62, scanBlend: 0 });
+assert.ok(Math.abs(scanLift - archiveWave(13, 2, 16.62) * 0.7) < 1e-12, "The entry scan contributes its authored wave");
 assert.notEqual(scanLift, 0, "The entry scan is live inside its window");
 assert.equal(
   at(13, 2, { idleGain: 1 }) - at(13, 2, { idleGain: 0 }),
@@ -70,7 +70,7 @@ assert.equal(
 );
 
 // Selection ripples are gated by the pulse gain.
-const pulse = [{ row: 13, lane: 2, time: 25.88 - 0.15 }];
+const pulse = [{ row: 13, lane: 2, time: 23.12 - 0.15 }];
 const rippled = at(13, 2, { pulses: pulse, selectionPulse: (d, age) => 0.8 * Math.exp(-age) });
 assert.ok(rippled > at(13, 2) + 0.2, "A live pulse raises the selected cell");
 assert.equal(

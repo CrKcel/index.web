@@ -60,7 +60,7 @@ test("visible edge bounds and independent offscreen shadow transforms", () => {
 test("zero scan shortcut keeps the authored waveform continuous at both edges", () => {
   // Outside the authored interval the waveform rests at exactly zero, and the
   // shortcut must not introduce a step where it takes over.
-  for (const time of [0, 17.78, 1000])
+  for (const time of [0, 15.02, 1000])
     for (let lane = -4; lane < 9; lane++)
       for (let row = -20; row < 60; row += 0.5)
         assert.equal(
@@ -69,8 +69,8 @@ test("zero scan shortcut keeps the authored waveform continuous at both edges", 
           `Wave must rest before the take at t=${time}`,
         );
   for (const [outside, inside] of [
-    [17.88 - 1e-6, 17.88 + 1e-6],
-    [22.23 + 1e-6, 22.23 - 1e-6],
+    [15.12 - 1e-6, 15.12 + 1e-6],
+    [19.47 + 1e-6, 19.47 - 1e-6],
   ])
     for (let lane = -4; lane < 9; lane++)
       for (let row = -20; row < 60; row += 0.5) {

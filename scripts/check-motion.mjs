@@ -41,10 +41,10 @@ const peak = (t) =>
     (best, y, row, values) => (y > values[best] ? row : best),
     0,
   );
-assert.ok(peak(19.18) > peak(18.58) + 6, "First crest must travel across rows");
-assert.ok(peak(20.68) < peak(20.08) - 8, "Second crest must return across rows");
+assert.ok(peak(16.42) > peak(15.82) + 6, "First crest must travel across rows");
+assert.ok(peak(17.92) < peak(17.32) - 8, "Second crest must return across rows");
 let maxFrameDelta = 0;
-for (let frame = 447; frame <= 556; frame++) {
+for (let frame = 378; frame <= 487; frame++) {
   for (let row = 0; row < 32; row++)
     for (let lane = 0; lane < 5; lane++) {
       const a = archiveWave(row, lane, frame / 25);
@@ -55,12 +55,12 @@ for (let frame = 447; frame <= 556; frame++) {
 }
 assert.ok(maxFrameDelta < 0.7, "25 fps samples must not teleport");
 assert.ok(
-  Math.abs(extraction(22.48) - extraction(23.08)) < 0.01,
+  Math.abs(extraction(19.72) - extraction(20.32)) < 0.01,
   "Pause between extraction phases",
 );
-assert.ok(extraction(24.88) > 3 && extraction(20.98) === 0);
+assert.ok(extraction(22.12) > 3 && extraction(18.22) === 0);
 assert.ok(
-  Math.abs(settlingWave(2, 21.98) - settlingWave(2, 22.38)) > 0.01,
+  Math.abs(settlingWave(2, 19.22) - settlingWave(2, 19.62)) > 0.01,
   "Neighbors keep moving during the first extraction hold",
 );
 assert.ok(selectionWave(8, 1) > 0.1, "Click ripple reaches neighboring rows");
@@ -68,7 +68,7 @@ assert.ok(selectionWave(8, 1) > 0.1, "Click ripple reaches neighboring rows");
 // Handoff: the flat equal-crest frame must blend into the selected-column wave
 // without a visible step.
 let preludeDelta = 0;
-for (let frame = 522; frame < 558; frame++) {
+for (let frame = 453; frame < 489; frame++) {
   for (let row = 0; row < 32; row++)
     for (let lane = 0; lane < 5; lane++)
       preludeDelta = Math.max(

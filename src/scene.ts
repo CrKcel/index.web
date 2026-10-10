@@ -207,7 +207,7 @@ export class ArchiveScene {
   private clearance = 0;
   private pulseGain = 1;
   private idleGain = 0;
-  private scanTime = 24.98;
+  private scanTime = 22.22;
   private scanBlend = 0;
   private cameraAim = new THREE.Vector3();
   private outgoing: {
@@ -637,7 +637,7 @@ export class ArchiveScene {
     this.rotation = this.targetDetail
       ? THREE.MathUtils.lerp(this.rotation, this.targetRotation, detailBlend)
       : returnStep(this.rotation, dt);
-    const shot = cinematic?.time ?? 24.98;
+    const shot = cinematic?.time ?? 22.22;
     if (cinematic) {
       this.scanTime = shot;
       this.scanBlend = 1;
@@ -814,9 +814,9 @@ export class ArchiveScene {
     this.decryption.update(dt, cinematic ? shot : undefined);
     this.appearance.apply(this.cassette.group, smooth(this.lift.value / 0.4));
     this.appearance.setClarity(this.cassette.group, this.decryption.clarity);
-    // Reference 17.80–18.64: the array travels horizontally into a white field.
-    const entry = cinematic ? smooth((shot - 17.78) / 0.86) : this.reveal;
-    const entranceTime = THREE.MathUtils.clamp((shot - 17.8) / 0.75, 0, 1);
+    // Reference 15.04–15.88: the array travels horizontally into a white field.
+    const entry = cinematic ? smooth((shot - 15.02) / 0.86) : this.reveal;
+    const entranceTime = THREE.MathUtils.clamp((shot - 15.04) / 0.75, 0, 1);
     const entryZ = cinematic
       ? -23 * (1 - entranceTime) ** 2
       : -28 * (1 - entry);

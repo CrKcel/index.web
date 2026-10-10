@@ -41,20 +41,20 @@ const draw = [
 const drawStart = draw.map(([f, start]) => [f, start] as const);
 const drawEnd = draw.map(([f, , end]) => [f, end] as const);
 const movingCut = [
-  [192, 0.1835],
-  [197, 0.184],
-  [202, 0.1885],
-  [207, 0.2],
-  [212, 0.2205],
-  [222, 0.2925],
-  [227, 0.3485],
-  [232, 0.421],
-  [237, 0.5095],
-  [242, 0.614],
-  [247, 0.722],
-  [252, 0.827],
-  [257, 0.9195],
-  [258, 0.9365],
+  [123, 0.1835],
+  [128, 0.184],
+  [133, 0.1885],
+  [138, 0.2],
+  [143, 0.2205],
+  [153, 0.2925],
+  [158, 0.3485],
+  [163, 0.421],
+  [168, 0.5095],
+  [173, 0.614],
+  [178, 0.722],
+  [183, 0.827],
+  [188, 0.9195],
+  [189, 0.9365],
 ] as const;
 const leftEdge = [
   [32, 814],
@@ -95,8 +95,8 @@ const leftEdge = [
 
 export function bootLogoTrack(frame: number) {
   const cut = track(movingCut, frame);
-  const start = frame < 192 ? track(drawStart, frame) : cut + 0.0275;
-  const end = frame < 192 ? track(drawEnd, frame) : cut + 1;
+  const start = frame < 123 ? track(drawStart, frame) : cut + 0.0275;
+  const end = frame < 123 ? track(drawEnd, frame) : cut + 1;
   return {
     offsetX: track(leftEdge, frame) - 520,
     start,

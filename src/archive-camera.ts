@@ -71,15 +71,15 @@ export type ArchiveCameraPlan = {
 
 export function planArchiveCamera(input: ArchiveCameraInput): ArchiveCameraPlan {
   const { cinematic, detail, width, height, layout } = input;
-  const shot = cinematic?.time ?? 24.98;
-  // Measured at 22.36 s: X edge (382,-204), adjacent row (78,38).
+  const shot = cinematic?.time ?? 22.22;
+  // Measured at 19.6 s: X edge (382,-204), adjacent row (78,38).
   // The label vertical edge constrains height; the file base is occluded.
   // Do not calibrate field of view from the visible fragment of a file.
-  const orbit = smooth((shot - 18.48) / 1.6);
-  const settle = smooth((shot - 20.13) / 2.25);
+  const orbit = smooth((shot - 15.72) / 1.6);
+  const settle = smooth((shot - 17.37) / 2.25);
   const yaw = THREE.MathUtils.degToRad(89 - 22 * orbit - 8 * settle);
   const elevation = THREE.MathUtils.degToRad(
-    3 + 40 * smooth((shot - 17.84) / 0.22) - 8 * orbit - 16 * settle,
+    3 + 40 * smooth((shot - 15.08) / 0.22) - 8 * orbit - 16 * settle,
   );
   const span = THREE.MathUtils.lerp(
     THREE.MathUtils.lerp(10.8, 10.3, orbit),
@@ -106,8 +106,8 @@ export function planArchiveCamera(input: ArchiveCameraInput): ArchiveCameraPlan 
     Math.cos(yaw) * Math.cos(elevation),
   );
   if (cinematic) {
-    const earlyTurn = smooth((shot - 23.18) / 1.3);
-    const finalTurn = smooth((shot - 24.48) / 5.4);
+    const earlyTurn = smooth((shot - 20.42) / 1.3);
+    const finalTurn = smooth((shot - 21.72) / 5.4);
     const shotYaw =
       yaw - THREE.MathUtils.degToRad(9 * earlyTurn + 32 * finalTurn);
     const shotElevation =
@@ -123,19 +123,19 @@ export function planArchiveCamera(input: ArchiveCameraInput): ArchiveCameraPlan 
       .normalize();
   }
   if (cinematic) {
-    const pan = smooth((shot - 21.28) / 0.95);
+    const pan = smooth((shot - 18.52) / 0.95);
     const right = new THREE.Vector3()
       .crossVectors(new THREE.Vector3(0, 1, 0), viewDirection)
       .normalize();
     aimTarget.addScaledVector(
       right,
-      -2.05 * (1 - pan) * smooth((shot - 24.2) / 0.8),
+      -2.05 * (1 - pan) * smooth((shot - 21.44) / 0.8),
     );
   }
-  if (cinematic && shot >= 20.93 && shot <= 23.18) {
-    // 21.28–22.28 s: the camera carries the same physical column from the
+  if (cinematic && shot >= 18.17 && shot <= 20.42) {
+    // 18.52–19.52 s: the camera carries the same physical column from the
     // right into the selected position while the neighboring crests subside.
-    const pan = smooth((shot - 21.28) / 1.05);
+    const pan = smooth((shot - 18.52) / 1.05);
     const right = new THREE.Vector3()
       .crossVectors(new THREE.Vector3(0, 1, 0), viewDirection)
       .normalize();
@@ -154,11 +154,11 @@ export function planArchiveCamera(input: ArchiveCameraInput): ArchiveCameraPlan 
       up,
       -(540 - THREE.MathUtils.lerp(340, 288, pan)) / pixelScale,
     );
-    aimTarget.lerp(anchorAim, smooth((shot - 20.93) / 0.35));
+    aimTarget.lerp(anchorAim, smooth((shot - 18.17) / 0.35));
   }
-  if (cinematic && shot > 23.18) {
-    const close = smooth((shot - 23.18) / 6.7);
-    const extractionCamera = smooth((shot - 23.18) / 1.25);
+  if (cinematic && shot > 20.42) {
+    const close = smooth((shot - 20.42) / 6.7);
+    const extractionCamera = smooth((shot - 20.42) / 1.25);
     const screenX = THREE.MathUtils.lerp(
       518 - 98 * extractionCamera,
       618,
@@ -181,7 +181,7 @@ export function planArchiveCamera(input: ArchiveCameraInput): ArchiveCameraPlan 
       .add(new THREE.Vector3(-2.5, 3.7, 0));
     anchorAim.addScaledVector(right, -(screenX - 960) * openingAspect / pixelScale);
     anchorAim.addScaledVector(up, -(540 - screenY) / pixelScale);
-    aimTarget.lerp(anchorAim, smooth((shot - 23.18) / 0.5));
+    aimTarget.lerp(anchorAim, smooth((shot - 20.42) / 0.5));
   }
   const framing = archiveFraming(width, height, span, detail, layout === "compact");
   if (!cinematic) {
@@ -195,7 +195,7 @@ export function planArchiveCamera(input: ArchiveCameraInput): ArchiveCameraPlan 
     if (framing.portrait) {
       // Keep the preview camera independent of the live lift, wave and rail.
       // Following model.position here would visually cancel those motions.
-      const previewAim = new THREE.Vector3(0, -4.6 + settlingWave(0, 22.44) + 0.4 + 1.85, -2.17);
+      const previewAim = new THREE.Vector3(0, -4.6 + settlingWave(0, 19.68) + 0.4 + 1.85, -2.17);
       previewAim.addScaledVector(up, (framing.previewY - 0.5) * height / pixelScale);
       aimTarget.copy(previewAim);
     }

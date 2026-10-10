@@ -1,7 +1,7 @@
 // Measured against the local reference at 25 fps. Times are app seconds on the
 // same clock as the camera and the rest of the opening.
-export const DECRYPTION_START = 25;
-export const DECRYPTION_END = 30.44;
+export const DECRYPTION_START = 22.24;
+export const DECRYPTION_END = 27.68;
 export const INTERACTIVE_RATE = 2.4;
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 const smooth = (value: number) => {
@@ -43,33 +43,33 @@ export function sampleCurve(knots: readonly Knot[], time: number) {
 }
 
 const GROW: readonly Knot[] = [
-  [25.12, 0],
-  [25.28, 0.19],
-  [25.52, 0.57],
-  [25.84, 0.79],
-  [26.16, 0.92],
-  [26.48, 0.973],
-  [26.92, 1],
+  [22.36, 0],
+  [22.52, 0.19],
+  [22.76, 0.57],
+  [23.08, 0.79],
+  [23.4, 0.92],
+  [23.72, 0.973],
+  [24.16, 1],
 ];
-// The clearing front starts when the line finishes retracting. At 29.88 s
+// The clearing front starts when the line finishes retracting. At 27.12 s
 // the upper half is already readable; height-dependent roughness moves with it.
 const REVEAL: readonly Knot[] = [
-  [29.72, 0],
-  [29.8, 0.28],
-  [29.88, 0.51],
-  [30.04, 0.74],
-  [30.2, 0.94],
-  [30.44, 1],
+  [26.96, 0],
+  [27.04, 0.28],
+  [27.12, 0.51],
+  [27.28, 0.74],
+  [27.44, 0.94],
+  [27.68, 1],
 ];
 const RETRACT: readonly Knot[] = [
-  [28.6, 1],
-  [28.76, 0.72],
-  [28.88, 0.38],
-  [29.0, 0.22],
-  [29.12, 0.14],
-  [29.28, 0.075],
-  [29.52, 0.024],
-  [29.72, 0],
+  [25.84, 1],
+  [26.0, 0.72],
+  [26.12, 0.38],
+  [26.24, 0.22],
+  [26.36, 0.14],
+  [26.52, 0.075],
+  [26.76, 0.024],
+  [26.96, 0],
 ];
 
 // Endpoints measured on the face during the extraction framing. Every moving
@@ -88,28 +88,28 @@ export function decryptionFrame(time: number) {
   const grow = sampleCurve(GROW, time);
   const remaining = sampleCurve(RETRACT, time);
   const intervals: [number, number][] = [];
-  if (time >= 25.12 && time < 26.92 && grow > 0)
+  if (time >= 22.36 && time < 24.16 && grow > 0)
     intervals.push([0, grow * 0.5], [1 - grow * 0.5, 1]);
-  else if (time >= 26.92 && time < 29.72)
+  else if (time >= 24.16 && time < 26.96)
     intervals.push([0.5 - remaining * 0.5, 0.5 + remaining * 0.5]);
   const markers =
-    smooth((time - 25.08) / 0.12) * (1 - smooth((time - 28.64) / 0.56));
+    smooth((time - 22.32) / 0.12) * (1 - smooth((time - 25.88) / 0.56));
   return {
     time,
     intervals,
     markers,
-    point: smooth((time - 29.46) / 0.2) * (1 - smooth((time - 29.96) / 0.22)),
-    label: smooth((time - 25.2) / 0.36) * (1 - smooth((time - 28.56) / 0.24)),
-    labelValue: smooth((time - 26.52) / 0.56),
+    point: smooth((time - 26.7) / 0.2) * (1 - smooth((time - 27.2) / 0.22)),
+    label: smooth((time - 22.44) / 0.36) * (1 - smooth((time - 25.8) / 0.24)),
+    labelValue: smooth((time - 23.76) / 0.56),
     clarity: sampleCurve(REVEAL, time),
     phase:
-      time < 25.12
+      time < 22.36
         ? "waiting"
-        : time < 26.92
+        : time < 24.16
           ? "joining"
-          : time < 28.6
+          : time < 25.84
             ? "connected"
-            : time < 29.72
+            : time < 26.96
               ? "retracting"
               : time < DECRYPTION_END
                 ? "revealing"

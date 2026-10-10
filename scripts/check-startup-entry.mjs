@@ -18,7 +18,7 @@ const browser = engine === 'webkit' ? await webkit.launch({headless:true}) : awa
 const report = {engine,version:browser.version(),checks:[],errors:[]};
 const output = resolve('.tools/issues');await mkdir(output,{recursive:true});
 /** The app-time seconds of the composed welcome card the opening holds on. */
-const HOLD = 16.48;
+const HOLD = 13.72;
 async function fresh(options={},prefs) {
   const context=await browser.newContext({viewport:{width:1440,height:900},serviceWorkers:'block',...options});
   if(prefs)await context.addInitScript(prefs=>localStorage.setItem('rhine-settings',JSON.stringify(prefs)),prefs);

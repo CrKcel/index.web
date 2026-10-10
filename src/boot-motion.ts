@@ -25,37 +25,41 @@ const at = (f: number, frames: number[]) => frames.includes(f);
 export function bootMotion(t: number) {
   const f = Math.floor(t * 25 + 0.00001);
   const step =
-    t < 2 ? "logo" : t < 10.36 ? "auth" : t < 13.64 ? "scan" : "welcome";
+    t < 2 ? "logo" : t < 7.6 ? "auth" : t < 10.88 ? "scan" : "welcome";
   let auth = "";
-  if (f < 135) {
-    auth = typed("ID CONFIRMED", f, 54, 67);
-    if (f >= 92) auth += " : " + typed("JOYCE MOORE", f, 93, 111);
-  } else if (f < 193) auth = typed("REQUEST RECEIVED", f, 139, 161);
+  // Each entry rests for roughly half a second before the next one starts
+  // typing, and the scan takes over on frame 190.
+  if (f < 98) {
+    auth = typed("ID CONFIRMED", f, 54, 62);
+    // The separator lands a short beat after the status line, so the name
+    // reads as the same entry rather than a second one.
+    if (f >= 71) auth += " : " + typed("JOYCE MOORE", f, 72, 82);
+  } else if (f < 132) auth = typed("REQUEST RECEIVED", f, 102, 116);
   else {
-    auth = typed("START PROCESSING", f, 195, 212);
-    if (f >= 221)
-      auth += ".".repeat(Math.min(3, 1 + Math.floor((f - 221) / 4)));
-    if (at(f, [251, 257, 258])) auth = "              SING...";
+    auth = typed("START PROCESSING", f, 134, 151);
+    if (f >= 160)
+      auth += ".".repeat(Math.min(3, 1 + Math.floor((f - 160) / 4)));
+    if (at(f, [182, 188, 189])) auth = "              SING...";
   }
   const frame = t * 25;
   const scan = scanTrack(frame);
   const scanOrbit = scanOrbitTrack(frame);
-  const scanGlitch = at(f, [297, 298, 300, 301]);
+  const scanGlitch = at(f, [228, 229, 231, 232]);
   const welcomeIntro = [1, 0, 0.28, 0, 1, 0, 0];
-  const flashIndex = f - 341;
-  const exit = smooth(progress(t, 17.44, 17.8));
+  const flashIndex = f - 272;
+  const exit = smooth(progress(t, 14.68, 15.04));
   return {
     t,
     f,
     step,
     auth,
-    logoOpacity: t >= 0.04 && t < 10.36 ? 1 : 0,
+    logoOpacity: t >= 0.04 && t < 7.6 ? 1 : 0,
     logo: bootLogoTrack(frame),
     logoLetters: typed("RHINE·LAB", f, 4, 27),
-    authOpacity: f >= 53 && f < 259 ? 1 : 0,
+    authOpacity: f >= 53 && f < 190 ? 1 : 0,
     brand: [0, 1, 2].map((line) => brandTrack(frame, line)),
     poweredLetters: typed("POWERED BY RHINE LAB", f, 51, 67).length,
-    scanVisible: t >= 10.36 && t < 13.64,
+    scanVisible: t >= 7.6 && t < 10.88,
     scan,
     scanOrbit,
     scanRadius: scan.radius,
@@ -64,64 +68,64 @@ export function bootMotion(t: number) {
       ? 0.32
       : track(
           [
-            [259, 0],
-            [260, 0.18],
-            [262, 0.6],
-            [265, 1],
+            [190, 0],
+            [191, 0.18],
+            [193, 0.6],
+            [196, 1],
           ],
           frame,
         ),
     ringBlur: scanGlitch ? 2.2 : 0,
     scanTracking: track(
       [
-        [259, 40],
-        [264, 28],
-        [269, 18],
-        [272, 14],
-        [277, 8],
-        [282, 4],
-        [287, 1.7],
-        [292, 0.5],
-        [299, 0],
-        [340, 0],
+        [190, 40],
+        [195, 28],
+        [200, 18],
+        [203, 14],
+        [208, 8],
+        [213, 4],
+        [218, 1.7],
+        [223, 0.5],
+        [230, 0],
+        [271, 0],
       ],
       frame,
     ),
     scanFont: 26.5,
     permissionOpacity:
-      t < 12.68
-        ? progress(t, 10.36, 10.76)
+      t < 9.92
+        ? progress(t, 7.6, 8.0)
         : track(
             [
-              [317, 1],
-              [318, 0.4],
-              [319, 0.3],
-              [320, 0.25],
-              [321, 0.1],
-              [322, 0.04],
-              [323, 0],
+              [248, 1],
+              [249, 0.4],
+              [250, 0.3],
+              [251, 0.25],
+              [252, 0.1],
+              [253, 0.04],
+              [254, 0],
             ],
             frame,
           ),
-    ornament: t >= 12.72,
+    ornament: t >= 9.96,
     coreRadius: scanOrbit.coreRadius,
-    welcomeVisible: t >= 13.64 && t < 17.8,
+    welcomeVisible: t >= 10.88 && t < 15.04,
     welcomePanel:
       flashIndex >= 0 && flashIndex < 7 ? welcomeIntro[flashIndex] : 0,
     welcomeInk:
       flashIndex >= 0 && flashIndex < 7
         ? [0, 0, 0.2, 1, 0, 0, 0.25][flashIndex]
         : 1,
-    companyVisible: f >= 360 && !at(f, [362, 363]),
-    companyMask: at(f, [366, 367]),
+    companyVisible: f >= 291 && !at(f, [293, 294]),
+    companyMask: at(f, [297, 298]),
     highlight: companyTrack(frame),
-    databaseOpacity: f < 398 || at(f, [400, 401, 403, 406]) ? 0 : 1,
-    welcomeLogo: f >= 360,
+    databaseOpacity: f < 329 || at(f, [331, 332, 334, 337]) ? 0 : 1,
+    welcomeLogo: f >= 291,
     welcomeScale: 1 - 0.46 * exit,
     welcomeOpacity: 1 - Math.pow(exit, 3),
     exitBlur: 8 * exit,
     exit,
-    backgroundOpacity: t < 17.8 ? 1 : 0,
-    white: smooth(progress(t, 17.04, 17.76)),
+    backgroundOpacity: t < 15.04 ? 1 : 0,
+    white: smooth(progress(t, 14.28, 15.0)),
   };
 }

@@ -231,7 +231,7 @@ export class TerminalAudio {
   updateBoot(time: number, frozen = false) {
     const previous = this.bootTime;
     this.bootTime = time;
-    const phase = time < 13.64 ? 0 : time < 17.8 ? 1 : time < 25.18 ? 2 : 3;
+    const phase = time < 10.88 ? 0 : time < 15.04 ? 1 : time < 22.42 ? 2 : 3;
     if (phase !== this.bootMix && this.context) {
       this.bootMix = phase;
       const gains = [
