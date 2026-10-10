@@ -85,7 +85,7 @@ export function fieldHeight(input: FieldInputs, row: number, lane: number) {
   const distance = row - input.shoulder;
   return (
     (height +
-    settlingWave(distance, 26.56) *
+    settlingWave(distance, 22.44) *
       columnStrength(lane, input.laneFocus)) * (1 - input.flatMix) + breathing + pulseHeight +
     (input.rhythm ? rhythmDisplacement(row, lane, input.now, input.playfield.bands, input.playfield.strength, input.rhythm, input.screenX(row, lane)) : 0) +
     input.relayLift(row, lane)

@@ -41,10 +41,10 @@ const peak = (t) =>
     (best, y, row, values) => (y > values[best] ? row : best),
     0,
   );
-assert.ok(peak(23.3) > peak(22.7) + 6, "First crest must travel across rows");
-assert.ok(peak(24.8) < peak(24.2) - 8, "Second crest must return across rows");
+assert.ok(peak(19.18) > peak(18.58) + 6, "First crest must travel across rows");
+assert.ok(peak(20.68) < peak(20.08) - 8, "Second crest must return across rows");
 let maxFrameDelta = 0;
-for (let frame = 550; frame < 800; frame++) {
+for (let frame = 447; frame <= 556; frame++) {
   for (let row = 0; row < 32; row++)
     for (let lane = 0; lane < 5; lane++) {
       const a = archiveWave(row, lane, frame / 25);
@@ -55,12 +55,12 @@ for (let frame = 550; frame < 800; frame++) {
 }
 assert.ok(maxFrameDelta < 0.7, "25 fps samples must not teleport");
 assert.ok(
-  Math.abs(extraction(26.6) - extraction(27.2)) < 0.01,
+  Math.abs(extraction(22.48) - extraction(23.08)) < 0.01,
   "Pause between extraction phases",
 );
-assert.ok(extraction(29) > 3 && extraction(25.1) === 0);
+assert.ok(extraction(24.88) > 3 && extraction(20.98) === 0);
 assert.ok(
-  Math.abs(settlingWave(2, 26.1) - settlingWave(2, 26.5)) > 0.01,
+  Math.abs(settlingWave(2, 21.98) - settlingWave(2, 22.38)) > 0.01,
   "Neighbors keep moving during the first extraction hold",
 );
 assert.ok(selectionWave(8, 1) > 0.1, "Click ripple reaches neighboring rows");
@@ -68,14 +68,14 @@ assert.ok(selectionWave(8, 1) > 0.1, "Click ripple reaches neighboring rows");
 // Handoff: the flat equal-crest frame must blend into the selected-column wave
 // without a visible step.
 let preludeDelta = 0;
-for (let frame = 750; frame < 786; frame++) {
+for (let frame = 522; frame < 558; frame++) {
   for (let row = 0; row < 32; row++)
     for (let lane = 0; lane < 5; lane++)
       preludeDelta = Math.max(
         preludeDelta,
         Math.abs(
-          cinematicField(row, lane, (frame + 1) / 25 - 5) -
-            cinematicField(row, lane, frame / 25 - 5),
+          cinematicField(row, lane, (frame + 1) / 25) -
+            cinematicField(row, lane, frame / 25),
         ),
       );
 }

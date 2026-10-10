@@ -1,5 +1,5 @@
 // The framing numbers in archive-camera.ts were measured against reference
-// frames, so this check pins the authored endpoints and the invariants the
+// captures, so this check pins the authored endpoints and the invariants the
 // comments claim: the settled lens, the settled view direction, the opening
 // zoom monotonicity, the fog anchoring and the portrait preview independence.
 import assert from "node:assert/strict";
@@ -53,7 +53,7 @@ for (const axis of ["x", "y", "z"])
   );
 
 // Extraction zooms in: the reference opening is monotone in both lens and fov.
-const frames = [22, 23, 24, 25, 26, 27, 28, 29, 30, 35].map((time) => shot(time));
+const frames = [17.88, 18.88, 19.88, 20.88, 21.88, 22.88, 23.88, 24.88, 25.88, 30.88].map((time) => shot(time));
 for (let i = 1; i < frames.length; i++) {
   assert.ok(
     frames[i].distance >= frames[i - 1].distance,

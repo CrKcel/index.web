@@ -132,7 +132,7 @@ let musicSuppressed = false;
 function configureAudio() { audio.configure({ ...prefs, music: prefs.music && !musicSuppressed }); }
 configureAudio();
 // The opening holds on its composed welcome card until the archive exists.
-const WELCOME_HOLD = 20.6;
+const WELCOME_HOLD = 16.48;
 let bootHeld = false;
 let scene: ArchiveScene | undefined;
 let viewer: ModelViewer | undefined;
@@ -683,7 +683,7 @@ function frame(ms: number) {
   viewer?.setTheme(theme);
   const cinema = mode === "boot" ? bootFrame(bootClock(time)) : undefined;
   // The calibrated 2D opening fully covers the scene until array entry.
-  if (!viewer?.isOpen && (!cinema || cinema.time >= 21.9)) scene?.update(time, cinema);
+  if (!viewer?.isOpen && (!cinema || cinema.time >= 17.78)) scene?.update(time, cinema);
   viewer?.update(time);
   if (scene && mode === "detail") {
     documentDecryption.update(time, scene.decryptionFrame, !motionActive("documentReveal"));

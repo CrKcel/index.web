@@ -4,6 +4,7 @@
 // started, ramps scheduled, and the order in which the facade gates them.
 import assert from "node:assert/strict";
 import { BOOT_CUES, SOUND_TYPES, rampLevel } from "../src/audio-types.ts";
+import { OPENING_END } from "../src/boot-frame.ts";
 import { synthesizeSound } from "../src/audio-synth.ts";
 import { MusicEngine, createStemGains } from "../src/audio-music.ts";
 import { TerminalAudio } from "../src/audio.ts";
@@ -192,7 +193,7 @@ const authored = new Set(SOUND_TYPES);
 for (const cue of BOOT_CUES) {
   assert.ok(authored.has(cue.sound), `Boot cue ${cue.sound} names an authored sound`);
   assert.ok(cue.time > previousCue, "Boot cues stay in ascending time order");
-  assert.ok(cue.time > 0 && cue.time < 35, "Boot cues stay inside the opening timeline");
+  assert.ok(cue.time > 0 && cue.time < OPENING_END, "Boot cues stay inside the opening timeline");
   previousCue = cue.time;
 }
 
@@ -217,13 +218,13 @@ assert.equal(voices(), 1, "A finished voice is pruned before the new one is kept
 assert.ok(dom.dispatched.length > 0, "A local-sound window event announces the effect");
 terminal.play("column", 0.25);
 assert.equal(voices(), 2, "A different sound is not throttled by the previous one");
-terminal.updateBoot(4); // first sample only seeds the previous boot time
+terminal.updateBoot(0); // first sample only seeds the previous boot time
 assert.equal(voices(), 0, "The first boot sample stops the pending effects");
 const scheduled = audio.sources.length;
-terminal.updateBoot(4.28); // crosses the 9.16s brand cue
+terminal.updateBoot(0.28); // crosses the 0.04s brand cue
 assert.equal(voices(), 1, "Boot crosses its first authored cue");
 assert.ok(audio.sources.length > scheduled, "The crossed cue schedules its sources");
-terminal.updateBoot(4.28, true); // a frozen review frame stops instead of replaying
+terminal.updateBoot(0.28, true); // a frozen review frame stops instead of replaying
 assert.equal(voices(), 0, "A frozen boot time clears the effect voices");
 assert.equal(terminal.stats().loaded, false, "No stems were fetched in this check");
 assert.deepEqual(terminal.stats().preferences, {

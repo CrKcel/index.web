@@ -7,6 +7,9 @@ import { fitElement, fitOwnLine, measureLine, onTextFitRefit, refitText } from "
 const ns = "http://www.w3.org/2000/svg";
 // Minimum optical gap between the ANALYSIS wordmark and its OS suffix.
 const brandSuffixGap = 16;
+// The backdrop sway is a slow horizontal drift; its phase is authored so the
+// opening starts with the artwork already displaced to the right.
+const backgroundDriftPhase = 0.8;
 const arc = (r: number, start: number, sweep: number, x = 960, y = 540) => {
   const point = (a: number) => `${x + Math.cos(a) * r},${y + Math.sin(a) * r}`;
   if (sweep >= Math.PI * 1.999)
@@ -227,7 +230,7 @@ export class BootSequence {
     this.opacity("#boot-background", s.backgroundOpacity);
     this.opacity(".boot-white", s.white);
     this.el(".boot-background svg").style.transform =
-      `translate(${Math.sin(t * 0.16) * 18}px, ${-(t - 6) * 5}px) scale(1.08)`;
+      `translate(${Math.sin(t * 0.16 + backgroundDriftPhase) * 18}px, ${-(t - 1) * 5}px) scale(1.08)`;
     return s;
   }
   private renderScan(s: ReturnType<typeof bootMotion>) {

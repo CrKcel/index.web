@@ -18,7 +18,7 @@ const browser = engine === 'webkit' ? await webkit.launch({headless:true}) : awa
 const report = {engine,version:browser.version(),checks:[],errors:[]};
 const output = resolve('.tools/issues');await mkdir(output,{recursive:true});
 /** The app-time seconds of the composed welcome card the opening holds on. */
-const HOLD = 20.6;
+const HOLD = 16.48;
 async function fresh(options={},prefs) {
   const context=await browser.newContext({viewport:{width:1440,height:900},serviceWorkers:'block',reducedMotion:'no-preference',...options});
   if(prefs)await context.addInitScript(prefs=>localStorage.setItem('rhine-settings',JSON.stringify(prefs)),prefs);
@@ -113,14 +113,14 @@ try {
     await published(page);
     const frame=await page.locator('.scan').boundingBox();
     const band={x:0,y:Math.max(0,frame.y-55),width:390,height:Math.min(55,frame.y)};
-    await page.waitForFunction(()=>window.readSnapshot().bootTime>=14,null,{timeout:60000});
+    await page.waitForFunction(()=>window.readSnapshot().bootTime>=9.88,null,{timeout:60000});
     const idle=await darkPixels(page,band);
-    assert.ok(idle<5,`The band above the film frame starts empty (${idle} dark pixels)`);
+    assert.ok(idle<5,`The band above the reference frame starts empty (${idle} dark pixels)`);
     let drawn=idle;
-    for(let sample=0;sample<20&&drawn<20&&(await stats(page)).bootTime<15.4;sample++)
+    for(let sample=0;sample<20&&drawn<20&&(await stats(page)).bootTime<11.28;sample++)
       drawn=Math.max(drawn,await darkPixels(page,band));
-    assert.ok(drawn>=20,`The closing ring is drawn above the film frame in portrait (${drawn} dark pixels)`);
-    report.checks.push({name:'The portrait scan is clipped by the display instead of its film frame',darkPixels:drawn});
+    assert.ok(drawn>=20,`The closing ring is drawn above the reference frame in portrait (${drawn} dark pixels)`);
+    report.checks.push({name:'The portrait scan is clipped by the display instead of its reference frame',darkPixels:drawn});
     await page.waitForFunction(()=>window.readSnapshot().hold,null,{timeout:60000});
     assert.equal(await page.locator('#skip').getAttribute('aria-disabled'),'true');
     await page.locator('#skip').click({force:true});

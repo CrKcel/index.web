@@ -1,4 +1,4 @@
-/* The film keeps its reference stage. Interactive layouts share the same DOM. */
+/* The opening keeps its reference stage. Interactive layouts share the same DOM. */
 #stage { --edge: 59px; }
 /* Opening artwork keeps undistorted local coordinates while its backdrop and
    3D canvas fill the actual display. Corner identity remains edge anchored. */
@@ -22,9 +22,9 @@
 .pwa-actions:empty { display: none; }
 .pwa-actions button { min-height: 44px; border-bottom: 1px solid #8e897b; font-size: 12px; }
 @media (display-mode: standalone) { body { overscroll-behavior: none; } }
-/* One entry button on every width. The opening film is scaled to the display,
+/* One entry button on every width. The opening is scaled to the display,
    so on narrow screens the shared ENTER SYSTEM control is scaled back about its
-   own corner: it keeps real CSS pixel sizes and stays tappable while the film
+   own corner: it keeps real CSS pixel sizes and stays tappable while the stage
    behind it stays in reference coordinates. The corner itself stays at the
    authored height; only a notch inset can push it further down. */
 [data-mobile-boot="true"] [data-layout="opening"] .skip {

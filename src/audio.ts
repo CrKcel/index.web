@@ -3,7 +3,7 @@
 // recipes live in audio-synth, the score in audio-music, the vocabulary in
 // audio-types.
 import { hasTypingBetween } from "./typing-rhythm";
-import { BOOT_START, FOOTAGE_OFFSET } from "./boot-motion";
+import { BOOT_START } from "./boot-motion";
 import {
   BOOT_CUES,
   clamp,
@@ -70,7 +70,7 @@ export class TerminalAudio {
   }
   restartBoot() {
     this.stopEffects();
-    this.bootTime = BOOT_START + FOOTAGE_OFFSET;
+    this.bootTime = BOOT_START;
     this.bootMix = -1;
   }
   private hide = () => {
@@ -228,11 +228,10 @@ export class TerminalAudio {
       this.duck!.gain.linearRampToValueAtTime(1, now + 0.9);
     }
   }
-  updateBoot(appTime: number, frozen = false) {
-    const time = appTime + FOOTAGE_OFFSET;
+  updateBoot(time: number, frozen = false) {
     const previous = this.bootTime;
     this.bootTime = time;
-    const phase = time < 22.76 ? 0 : time < 26.92 ? 1 : time < 34.3 ? 2 : 3;
+    const phase = time < 13.64 ? 0 : time < 17.8 ? 1 : time < 25.18 ? 2 : 3;
     if (phase !== this.bootMix && this.context) {
       this.bootMix = phase;
       const gains = [

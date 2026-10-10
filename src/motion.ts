@@ -1,11 +1,11 @@
-// Times are seconds from the reference video's 05:00 frame (25 fps).
+// Times are app seconds on the opening clock (25 fps).
 export const smooth = (t: number) => {
   t = Math.max(0, Math.min(1, t));
   return t * t * t * (10 + t * (-15 + 6 * t));
 };
 const bell = (x: number, width: number) => Math.exp(-0.5 * (x / width) ** 2);
 export function archiveWave(row: number, lane: number, time: number) {
-  const t = time - 22;
+  const t = time - 17.88;
   // Both authored envelopes are exactly zero outside this interval.
   if (t <= 0 || t >= 4.35) return 0;
   const phase = row + (lane - 2) * 0.65;
@@ -26,14 +26,14 @@ export function archiveWave(row: number, lane: number, time: number) {
 }
 export function extraction(time: number) {
   return (
-    0.4 * smooth((time - 25.58) / 0.82) + 2.95 * smooth((time - 27.55) / 1.3)
+    0.4 * smooth((time - 21.46) / 0.82) + 2.95 * smooth((time - 23.43) / 1.3)
   );
 }
 // The returning scan leaves two moving shoulders around the selected file.
 // Their delay grows with distance, so the neighboring files keep moving during
 // the first extraction and settle before the second extraction.
 export function settlingWave(distance: number, time: number) {
-  const age = time - 25.05 - Math.abs(distance) * 0.065;
+  const age = time - 20.93 - Math.abs(distance) * 0.065;
   const envelope = Math.max(
     -0.42,
     2.15 - 0.17 * (Math.sqrt(distance * distance + 1) - 1),
@@ -87,13 +87,13 @@ export function cinematicField(
   center = 12,
   focus = 2,
 ) {
-  const handoff = smooth((time - 24.95) / 0.45);
-  const selection = smooth((time - 25.4) / 0.95);
+  const handoff = smooth((time - 20.83) / 0.45);
+  const selection = smooth((time - 21.28) / 0.95);
   const shoulderTime = time + 0.3 * handoff * (1 - selection);
   return (
     archiveWave(row, lane, time) * (1 - handoff) +
     settlingWave(row - center, shoulderTime) *
-      columnStrength(lane, focus, (time - 25.4) / 0.95)
+      columnStrength(lane, focus, (time - 21.28) / 0.95)
   );
 }
 

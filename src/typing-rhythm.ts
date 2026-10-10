@@ -1,18 +1,18 @@
-import { bootMotion, FOOTAGE_OFFSET } from "./boot-motion";
+import { bootMotion } from "./boot-motion";
 
 // Use the actual 25 fps text reveal, including the first character of each field.
-// Glitch restoration at frames 479/485/486 is not new typing.
+// Glitch restoration at frames 251/257/258 is not new typing.
 export const TYPING_FRAMES: readonly number[] = [
-  [282, 295],
-  [320, 339],
-  [367, 389],
-  [423, 440],
-  [449, 457],
+  [54, 67],
+  [92, 111],
+  [139, 161],
+  [195, 212],
+  [221, 229],
 ].flatMap(([start, end]) => {
   const frames: number[] = [];
   let previous = 0;
   for (let frame = start; frame <= end; frame++) {
-    const motion = bootMotion(frame / 25 - FOOTAGE_OFFSET);
+    const motion = bootMotion(frame / 25);
     const text = motion.auth;
     const count = text.replace(/\s/g, "").length;
     if (count > previous) frames.push(frame);
@@ -21,9 +21,9 @@ export const TYPING_FRAMES: readonly number[] = [
   return frames;
 });
 
-export function hasTypingBetween(previousVideoTime: number, videoTime: number) {
+export function hasTypingBetween(previousTime: number, time: number) {
   return TYPING_FRAMES.some(
     (frame) =>
-      frame / 25 > previousVideoTime + 1e-6 && frame / 25 <= videoTime + 1e-6,
+      frame / 25 > previousTime + 1e-6 && frame / 25 <= time + 1e-6,
   );
 }

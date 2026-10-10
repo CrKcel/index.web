@@ -49,15 +49,16 @@ export const rampLevel = (
   }
   param.linearRampToValueAtTime(value, now + seconds);
 };
+/** Opening effect cues in app seconds, on the same clock as the camera. */
 export const BOOT_CUES: readonly { time: number; sound: Sound }[] = [
-  { time: 9.16, sound: "brand" },
-  { time: 11.84, sound: "confirm" },
-  { time: 19.48, sound: "scan" },
-  { time: 21.84, sound: "confirm" },
-  { time: 22.76, sound: "welcome" },
-  { time: 23.52, sound: "text-reveal" },
-  { time: 25.04, sound: "text-reveal" },
-  { time: 26.92, sound: "array" },
-  { time: 30.68, sound: "open" },
-  { time: 34.3, sound: "inspect" },
+  { time: 0.04, sound: "brand" },
+  { time: 2.72, sound: "confirm" },
+  { time: 10.36, sound: "scan" },
+  { time: 12.72, sound: "confirm" },
+  { time: 13.64, sound: "welcome" },
+  { time: 14.4, sound: "text-reveal" },
+  { time: 15.92, sound: "text-reveal" },
+  { time: 17.8, sound: "array" },
+  { time: 21.56, sound: "open" },
+  { time: 25.18, sound: "inspect" },
 ];

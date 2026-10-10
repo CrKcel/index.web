@@ -28,7 +28,7 @@ for (const scale of [0.5, 1, 2]) {
 
 const length = (frame) => frame.intervals.reduce((n, [a, b]) => n + b - a, 0);
 let previous = 0;
-for (let t = 34.24; t < 36.04; t += 0.001) {
+for (let t = 25.12; t < 26.92; t += 0.001) {
   const f = decryptionFrame(t),
     current = length(f);
   assert.ok(current >= previous - 1e-10 && current <= 1);
@@ -36,10 +36,10 @@ for (let t = 34.24; t < 36.04; t += 0.001) {
     assert.ok(Math.abs(f.intervals[0][1] + f.intervals[1][0] - 1) < 1e-10);
   previous = current;
 }
-assert.deepEqual(decryptionFrame(36.04).intervals, [[0, 1]]);
-assert.equal(length(decryptionFrame(37.71)), 1);
+assert.deepEqual(decryptionFrame(26.92).intervals, [[0, 1]]);
+assert.equal(length(decryptionFrame(28.59)), 1);
 previous = 1;
-for (let t = 37.72; t < 38.84; t += 0.001) {
+for (let t = 28.6; t < 29.72; t += 0.001) {
   const f = decryptionFrame(t),
     current = length(f);
   assert.ok(current <= previous + 1e-10 && current >= 0);
@@ -47,10 +47,10 @@ for (let t = 37.72; t < 38.84; t += 0.001) {
   assert.equal(f.clarity, 0);
   previous = current;
 }
-assert.equal(length(decryptionFrame(38.84)), 0);
-assert.equal(decryptionFrame(38.84).clarity, 0);
-assert.equal(decryptionFrame(39.56).clarity, 1);
-assert.ok(length(decryptionFrame(34.64)) > 0.5, "Joining is eased, not linear");
+assert.equal(length(decryptionFrame(29.72)), 0);
+assert.equal(decryptionFrame(29.72).clarity, 0);
+assert.equal(decryptionFrame(30.44).clarity, 1);
+assert.ok(length(decryptionFrame(25.52)) > 0.5, "Joining is eased, not linear");
 const a = new DecryptionController();
 const INTERACTIVE_SECONDS = (DECRYPTION_END - DECRYPTION_START) / INTERACTIVE_RATE;
 a.enter();
@@ -64,7 +64,7 @@ assert.ok(
   Math.abs(elapsed - INTERACTIVE_SECONDS) < 0.05,
   `The interactive timeline keeps its authored length (${elapsed.toFixed(2)}s vs ${INTERACTIVE_SECONDS.toFixed(2)}s)`,
 );
-const revealAt = (38.84 - DECRYPTION_START) / INTERACTIVE_RATE;
+const revealAt = (29.72 - DECRYPTION_START) / INTERACTIVE_RATE;
 assert.ok(
   revealAt + 0.95 <= 3.1,
   `The document opens inside the camera move, not after it (opens at ${revealAt.toFixed(2)}s)`,
@@ -81,11 +81,11 @@ assert.equal(a.clarity, 1);
 assert.equal(a.frame.intervals.length, 0);
 a.select();
 assert.equal(a.clarity, 0);
-a.update(0, false, 35);
+a.update(0, false, 25.88);
 assert.equal(a.frame.phase, "joining");
-a.update(0, false, 39.56);
+a.update(0, false, 30.44);
 assert.equal(a.clarity, 1);
-a.update(0, false, 34);
+a.update(0, false, 24.88);
 assert.equal(a.clarity, 0, "Reference seeking is reversible");
 
 const appearance = new CardAppearance();

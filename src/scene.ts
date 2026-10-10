@@ -208,7 +208,7 @@ export class ArchiveScene {
   private clearance = 0;
   private pulseGain = 1;
   private idleGain = 0;
-  private scanTime = 29.1;
+  private scanTime = 24.98;
   private scanBlend = 0;
   private cameraAim = new THREE.Vector3();
   private outgoing: {
@@ -663,7 +663,7 @@ export class ArchiveScene {
     this.rotation = this.targetDetail
       ? THREE.MathUtils.lerp(this.rotation, this.targetRotation, detailBlend)
       : returnStep(this.rotation, dt, !this.motion.detailTransition);
-    const shot = cinematic?.time ?? 29.1;
+    const shot = cinematic?.time ?? 24.98;
     if (cinematic) {
       this.scanTime = shot;
       this.scanBlend = 1;
@@ -848,12 +848,12 @@ export class ArchiveScene {
     // unsealing while it travels into the reading framing. It stays alive even
     // when the model visuals are disabled; the document mask uses the same
     // timeline independently.
-    this.decryption.update(dt, false, cinematic ? shot + 5 : undefined);
+    this.decryption.update(dt, false, cinematic ? shot : undefined);
     this.appearance.apply(this.cassette.group, smooth(this.lift.value / 0.4));
     this.appearance.setClarity(this.cassette.group, this.modelClarity());
-    // Reference 26.92–27.76: the array travels horizontally into a white field.
-    const entry = cinematic ? smooth((shot - 21.9) / 0.86) : this.reveal;
-    const entranceTime = THREE.MathUtils.clamp((shot - 21.92) / 0.75, 0, 1);
+    // Reference 17.80–18.64: the array travels horizontally into a white field.
+    const entry = cinematic ? smooth((shot - 17.78) / 0.86) : this.reveal;
+    const entranceTime = THREE.MathUtils.clamp((shot - 17.8) / 0.75, 0, 1);
     const entryZ = cinematic
       ? -23 * (1 - entranceTime) ** 2
       : -28 * (1 - entry);
