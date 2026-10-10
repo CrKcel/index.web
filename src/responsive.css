@@ -3,7 +3,7 @@
 /* Opening artwork keeps undistorted local coordinates while its backdrop and
    3D canvas fill the actual display. Corner identity remains edge anchored. */
 [data-layout="opening"] .boot { inset: auto; left: calc(50% - 960px); top: calc(50% - 540px); width: 1920px; height: 1080px; }
-[data-layout="opening"] .boot-white { left: calc((1920px - var(--opening-width)) / 2); top: calc((1080px - var(--opening-height)) / 2); width: var(--opening-width); height: var(--opening-height); right: auto; bottom: auto; }
+[data-layout="opening"] .boot-white { inset: 0; }
 [data-layout="opening"] .scan { transform: scale(var(--opening-scan-scale)); transform-origin: center; }
 [data-layout="opening"][data-opening-portrait="true"] :is(.access-text, .auth-status) { --font-base: 36px; }
 [data-layout="opening"][data-opening-portrait="true"] .scan > span { font-size: 52px !important; letter-spacing: 1px !important; }

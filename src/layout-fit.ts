@@ -42,8 +42,6 @@ export function fitLayout(host: FitHost) {
     "--stage-inverse-scale",
     String(scale > 0 ? 1 / scale : 1),
   );
-  stage.style.setProperty("--opening-width", `${width}px`);
-  stage.style.setProperty("--opening-height", `${height}px`);
   stage.style.setProperty("--opening-scan-scale", String(Math.min(1, width / 1920)));
   stage.dataset.openingPortrait = String(width < height);
   // The software keyboard resizes dialogs without recomposing the 3D scene.

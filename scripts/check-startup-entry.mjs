@@ -60,6 +60,13 @@ try {
     assert.equal(await page.locator('#stage').getAttribute('data-boot'),'welcome');
     assert.equal(await page.locator('#skip').getAttribute('aria-disabled'),'true');
     assert.equal(await page.locator('.welcome-status').evaluate(el=>getComputedStyle(el).opacity),'1','The loading status is on screen');
+    const cover=await page.evaluate(()=>{
+      const box=selector=>{const r=document.querySelector(selector).getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom}};
+      return {layout:document.querySelector('#stage').dataset.layout,flash:box('.boot-white'),backdrop:box('#boot-background')};
+    });
+    assert.equal(cover.layout,'opening','The live opening drives the responsive stage');
+    for(const edge of ['x','y','right','bottom'])
+      assert.ok(Math.abs(cover.flash[edge]-cover.backdrop[edge])<1,`The flash covers the whole opening backdrop (${edge}: ${JSON.stringify(cover)})`);
     await page.screenshot({path:resolve(output,'opening-hold.png')});
     // Entering the array early is refused by pointer and by keyboard.
     await page.locator('#skip').click({force:true});
