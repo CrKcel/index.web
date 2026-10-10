@@ -16,8 +16,6 @@
 | [`AGENTS.md`](AGENTS.md) | 命令、检查与浏览器回归、部署与验收、档案与字体 |
 | [`docs/DESIGN.md`](docs/DESIGN.md) | 视觉、相机、材质与运动基准 |
 | [`docs/CLOUDFLARE-DEPLOYMENT.md`](docs/CLOUDFLARE-DEPLOYMENT.md) | Cloudflare 发行包内容、缓存语义与额度 |
-| [`content/README.md`](content/README.md) | 档案字段与修改步骤 |
-| [`public/audio/README.md`](public/audio/README.md) | 配乐与音效 |
 
 ## LIENSE
 

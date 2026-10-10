@@ -42,7 +42,7 @@
 | `npm run deploy` | `build:worker` 之后由 Wrangler 上传发行包 |
 | `npm run check:content` | 校验档案数据规则与下载文本 |
 | `npm run check` | 全部免浏览器检查，与 CI 相同 |
-| `npm run check:browser` | 真实浏览器回归，默认不跑，见「浏览器回归」 |
+| `npm run check:browser` | 真实浏览器回归，默认不跑 |
 | `npm run check:deployment` | 核验线上发行，默认 `https://index.crkcel.com/`，可传其他基址，只接受 HTTPS 基址或 `127.0.0.1` |
 
 Wrangler：`npx wrangler dev` 本地开发，`npx wrangler deploy` 部署，`npx wrangler types` 生成类型，改动绑定后运行 `wrangler types`。Cloudflare Workers 文档 https://developers.cloudflare.com/workers/。
