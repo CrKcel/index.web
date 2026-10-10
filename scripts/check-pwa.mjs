@@ -22,7 +22,7 @@ const server=createServer(async(req,res)=>{try{
 await new Promise(resolve=>server.listen(5191,'127.0.0.1',resolve));
 const browser=await launchChromium(chromium);
 const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
-await context.addInitScript(()=>{if(!localStorage.getItem('rhine-settings'))localStorage.setItem('rhine-settings',JSON.stringify({reduced:true,sound:false,music:false}))});
+await context.addInitScript(()=>{if(!localStorage.getItem('rhine-settings'))localStorage.setItem('rhine-settings',JSON.stringify({sound:false,music:false}))});
 await installSnapshot(context);
 const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
 const ready=()=>page.waitForFunction(()=>window.readSnapshot().ready&&document.documentElement.dataset.offlineReady==='true'&&navigator.serviceWorker.controller,null,{timeout:90000});

@@ -1,7 +1,7 @@
 // Preserve an earlier production dist, then set PWA_PREVIOUS_DIST to its path.
 import { loadPlaywright } from './playwright.mjs';
 import { launchChromium, browserChannel } from './browser-launch.mjs';
-import { installSnapshot, snapshot as stats } from './page-snapshot.mjs';
+import { installSnapshot } from './page-snapshot.mjs';
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {readFile, writeFile, mkdir} from 'node:fs/promises';
@@ -28,7 +28,7 @@ const browser=await launchChromium(chromium);
 const report={channel,version:browser.version(),release:metadata.version,checks:[],errors:[]};
 try {
  const context=await browser.newContext({viewport:{width:1440,height:900}});
- await context.addInitScript(()=>{if(!localStorage.getItem('rhine-settings'))localStorage.setItem('rhine-settings',JSON.stringify({reduced:true,sound:false,music:false}))});
+ await context.addInitScript(()=>{if(!localStorage.getItem('rhine-settings'))localStorage.setItem('rhine-settings',JSON.stringify({sound:false,music:false}))});
  await installSnapshot(context);
  const page=await context.newPage();page.on('pageerror',e=>report.errors.push(e.message));
  // This check deliberately runs an earlier release, and that release predates
@@ -53,8 +53,7 @@ try {
  const recovered=await releaseCaches();
  assert.ok(recovered.includes(metadata.version)&&recovered.length===1,'Recovery activates exactly the new release');
  assert.equal(await page.evaluate(()=>localStorage.getItem('rhine-saved')),'["X-001"]');
- assert.equal((await stats(page)).motion.reduced,true);
- report.checks.push('network recovery replaces the old page and preserves bookmarks and motion preference');
+ report.checks.push('network recovery replaces the old page and preserves bookmarks');
  broken=true;
  await page.goto(base+'update.html');await page.getByRole('button',{name:'更新并返回'}).click();
  await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('更新未完成'));

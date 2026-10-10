@@ -101,8 +101,8 @@ export const INSPECTION_LIFT = 4.05;
 export const ALIGNMENT_EPSILON = 0.001;
 // Hold altitude while facing back into the slot. Descent begins only once
 // alignment is complete; this also applies to independently returning copies.
-export function returnStep(angle: number, dt: number, reduced = false) {
-  const next = angle * Math.exp(-dt * (reduced ? 35 : 7));
+export function returnStep(angle: number, dt: number) {
+  const next = angle * Math.exp(-dt * 7);
   return Math.abs(next) <= ALIGNMENT_EPSILON ? 0 : next;
 }
 export interface Spring {

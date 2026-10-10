@@ -40,7 +40,6 @@ export type FieldInputs = {
   scanBlend: number;
   idleGain: number;
   flatMix: number;
-  selectionWave: boolean;
   pulses: readonly FieldPulse[];
   /** Authored selection ripple, so the caller can swap the envelope. */
   selectionPulse: (distance: number, age: number) => number;
@@ -73,7 +72,7 @@ export function fieldHeight(input: FieldInputs, row: number, lane: number) {
     ) *
     input.idleGain;
   let pulseHeight = 0;
-  if (!input.cinematic && input.selectionWave) {
+  if (!input.cinematic) {
     let ripple = 0;
     for (const p of input.pulses) {
       const distance = Math.hypot(row - p.row, (lane - p.lane) * 2.2);

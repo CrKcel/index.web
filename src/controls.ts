@@ -34,8 +34,6 @@ export type ControlsHost = {
   setQuery(query: string): void;
   setFilter(filter: string): void;
   setColorTheme(theme: string): void;
-  setMotionPreset(preset: "full" | "reduced"): void;
-  setMotion(key: string, enabled: boolean): void;
   setQualityPreset(value: string): void;
   setQualityValue(key: string, value: string): void;
   setToggle(key: string, enabled: boolean): void;
@@ -80,10 +78,6 @@ export function bindControls(host: ControlsHost) {
       host.setToggle(el.dataset.pref, el.checked);
       host.play("confirm");
     }
-    if (el.dataset.motion) {
-      host.setMotion(el.dataset.motion, el.checked);
-      host.play("confirm");
-    }
   });
 
   document.addEventListener("click", (e) => {
@@ -97,17 +91,6 @@ export function bindControls(host: ControlsHost) {
     if (host.modalClosing()) return;
     const el = (e.target as Element).closest<HTMLElement>("button");
     if (!el) return;
-    if (el.dataset.action === "motion-preset") {
-      const preset = el.dataset.preset;
-      if (preset !== "full" && preset !== "reduced") return;
-      host.setMotionPreset(preset);
-      host.renderModal();
-      requestAnimationFrame(() =>
-        document.querySelector<HTMLButtonElement>(`[data-action="motion-preset"][data-preset="${preset}"]`)?.focus({ preventScroll: true }),
-      );
-      host.play("confirm");
-      return;
-    }
     if (el.dataset.select) {
       host.select(Number(el.dataset.select));
       return;

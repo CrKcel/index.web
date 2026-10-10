@@ -31,14 +31,6 @@ import {
   storeSaved,
   type TerminalPreferences,
 } from "./prefs-store";
-import {
-  fullMotion,
-  motionEnabled,
-  motionPresetFor,
-  motionSettingsMarkup,
-  reducedMotion,
-  type MotionKey,
-} from "./motion-preferences";
 import "./startup.css";
 import { isColorTheme, resolveDarkTheme } from "./color-theme";
 import { paintTheme } from "./theme-ui";
@@ -105,13 +97,11 @@ let pendingDetailFocus = false;
 let bookmarkFeedback: Animation | undefined;
 const saved = loadSaved();
 const prefs: TerminalPreferences = loadPreferences();
-const motionActive = (key: MotionKey) => motionEnabled(prefs.motion, key);
-const motionIsReduced = () => Object.values(prefs.motion).every((value) => !value);
 const darkTheme = () => resolveDarkTheme(prefs.colorTheme);
 paintTheme(darkTheme() ? 1 : 0);
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
   if (prefs.colorTheme !== "system") return;
-  if (scene) scene.setTheme(darkTheme(), !motionActive("surfaceTransitions"));
+  if (scene) scene.setTheme(darkTheme());
   else paintTheme(darkTheme() ? 1 : 0);
 });
 const {
@@ -126,7 +116,7 @@ const {
   categoryTitle,
   clearanceTitle,
   rollingTitles,
-} = createArchiveWidgets(prefs.motion);
+} = createArchiveWidgets();
 const audio = new TerminalAudio();
 let musicSuppressed = false;
 function configureAudio() { audio.configure({ ...prefs, music: prefs.music && !musicSuppressed }); }
@@ -150,29 +140,17 @@ function saveAudioPrefs() {
 }
 function savePrefs() {
   saveAudioPrefs();
-  if (!motionActive("rollingText")) rollingTitles.forEach(title => title.finish());
-  if (!motionActive("rollingNumbers")) [fileCounter, columnCounter, selectedCode, hoverCode].forEach(counter => counter.finish());
-  if (!motionActive("surfaceTransitions")) {
-    detailTransition.finish();
-    modalTransition?.finish();
-    tabTransition.finish();
-    bookmarkFeedback?.cancel();
-  }
-  scene?.setMotion(prefs.motion);
-  scene?.setTheme(darkTheme(), !motionActive("surfaceTransitions"));
+  scene?.setTheme(darkTheme());
   document.querySelectorAll<HTMLElement>("[data-color-theme]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.colorTheme === prefs.colorTheme)));
   scene?.setQuality(prefs.rendering);
   viewer?.setQuality(prefs.rendering);
-  viewer?.setMotion(prefs.motion);
   syncQualityUI(prefs.rendering);
-  fileCounter.update({ animated: motionActive("rollingNumbers") && mode === "archive" });
-  rollingTitles.forEach(title => title.update({ animated: motionActive("rollingText") && mode === "archive" }));
-  columnCounter.update({ animated: motionActive("rollingNumbers") && mode === "archive" });
-  selectedCode.update({ animated: motionActive("rollingNumbers") && mode === "archive" });
-  hoverCode.update({ animated: motionActive("rollingNumbers") && mode === "archive" });
-  $("#stage").classList.toggle("reduce-motion", motionIsReduced());
-  $("#stage").classList.toggle("reduce-surfaces", !motionActive("surfaceTransitions"));
-  updateFooterClock(new Date(), motionActive("rollingNumbers"));
+  fileCounter.update({ animated: mode === "archive" });
+  rollingTitles.forEach(title => title.update({ animated: mode === "archive" }));
+  columnCounter.update({ animated: mode === "archive" });
+  selectedCode.update({ animated: mode === "archive" });
+  hoverCode.update({ animated: mode === "archive" });
+  updateFooterClock(new Date());
 }
 function fit() {
   fitLayout({
@@ -206,7 +184,7 @@ const fileTicks = [...$("#file-ticks").querySelectorAll<HTMLButtonElement>("butt
 
 function setMode(next: Mode) {
   const previousMode = mode;
-  rollingTitles.forEach(title => title.update({ animated: motionActive("rollingText") && next === "archive" }));
+  rollingTitles.forEach(title => title.update({ animated: next === "archive" }));
   if (next !== "archive") {
     rollingTitles.forEach(title => title.finish());
     hoverCode.finish();
@@ -224,11 +202,11 @@ function setMode(next: Mode) {
   $(".system-nav").inert = next === "boot" || Boolean(modal);
   $(".system-footer").inert = next === "boot" || Boolean(modal);
   if (next === "detail") {
-    if (previousMode !== "detail") detailTransition.show(!motionActive("surfaceTransitions"));
+    if (previousMode !== "detail") detailTransition.show();
   } else if (previousMode === "detail" || (next === "boot" && !$("#detail-ui").hidden)) {
     pendingDetailFocus = false;
     tabTransition.cancel();
-    detailTransition.hide(!motionActive("surfaceTransitions") || next === "boot");
+    detailTransition.hide();
     if (!modal && next === "archive") $(".read-file").focus({ preventScroll: true });
   }
   $("#detail-ui").inert = next !== "detail" || Boolean(modal);
@@ -275,9 +253,9 @@ function updateSelection(navigation?: ArchiveNavigation) {
   const r = records[selected];
   const { lane } = fileLocation(selected);
   const files = columnFiles(lane);
-  selectionTitle.update({ text: r.title, animated: motionActive("rollingText") && mode === "archive" });
-  clearanceTitle.update({ text: r.clearance, animated: motionActive("rollingText") && mode === "archive" });
-  categoryTitle.update({ text: r.category, animated: motionActive("rollingText") && mode === "archive" });
+  selectionTitle.update({ text: r.title, animated: mode === "archive" });
+  clearanceTitle.update({ text: r.clearance, animated: mode === "archive" });
+  categoryTitle.update({ text: r.category, animated: mode === "archive" });
   const direction =
     navigation && "axis" in navigation
       ? navigation.direction > 0
@@ -286,12 +264,12 @@ function updateSelection(navigation?: ArchiveNavigation) {
       : "auto";
   selectedCode.update({
     value: Number(r.id.slice(2)),
-    animated: motionActive("rollingNumbers") && mode === "archive",
+    animated: mode === "archive",
     direction,
   });
   fileCounter.update({
     value: files.indexOf(selected) + 1,
-    animated: motionActive("rollingNumbers") && mode === "archive",
+    animated: mode === "archive",
     direction:
       navigation && "axis" in navigation && navigation.axis === "row"
         ? direction
@@ -300,13 +278,13 @@ function updateSelection(navigation?: ArchiveNavigation) {
   $(".count-total").textContent = String(files.length).padStart(2, "0");
   columnCounter.update({
     value: lane + 1,
-    animated: motionActive("rollingNumbers") && mode === "archive",
+    animated: mode === "archive",
     direction:
       navigation && "axis" in navigation && navigation.axis === "lane"
         ? direction
         : "auto",
   });
-  columnTitle.update({ text: archiveColumns[lane], animated: motionActive("rollingText") && mode === "archive" });
+  columnTitle.update({ text: archiveColumns[lane], animated: mode === "archive" });
   $<HTMLButtonElement>('[data-action="column-prev"]').disabled = false;
   $<HTMLButtonElement>('[data-action="column-next"]').disabled = false;
   fileTicks.forEach((button, slot) => {
@@ -326,7 +304,7 @@ function replayBoot() {
 function replayBootAfterModal() {
   bootStart = performance.now() / 1000 - BOOT_START;
   lastStep = "";
-  setMode(motionActive("boot") ? "boot" : "archive");
+  setMode("boot");
   audio.restartBoot();
   scene?.select(0);
   selected = 0;
@@ -352,7 +330,7 @@ function toggleSaved() {
   button.querySelector("span")!.textContent = added ? "已收藏" : "收藏档案";
   button.setAttribute("aria-pressed", String(added));
   bookmarkFeedback?.cancel();
-  if (motionActive("surfaceTransitions")) bookmarkFeedback = button.animate(
+  bookmarkFeedback = button.animate(
     [{ backgroundColor: "#67634c" }, { backgroundColor: "#252820" }],
     { duration: 220, easing: "ease-out" },
   );
@@ -383,7 +361,7 @@ function renderDetail() {
   });
   $("#detail-content").setAttribute("tabindex", "-1");
   $('[data-action="bookmark"]').setAttribute("aria-pressed", String(saved.has(r.id)));
-  documentDecryption.reset($("#detail-content"), !motionActive("documentReveal") || !scene || scene.decryptionFrame.phase === "clear");
+  documentDecryption.reset($("#detail-content"), !scene || scene.decryptionFrame.phase === "clear");
   setTab(activeTab, false);
 }
 function setTab(tab: string, sound = true) {
@@ -398,14 +376,14 @@ function setTab(tab: string, sound = true) {
   const r = records[selected];
   const tabButton = $<HTMLButtonElement>(`[data-tab="${tab}"]`);
   const indicator = $(".tab-indicator");
-  indicator.style.transition = sound && motionActive("surfaceTransitions") ? "" : "none";
+  indicator.style.transition = sound ? "" : "none";
   indicator.style.transform = `translateX(${tabButton.offsetLeft}px) scaleX(${tabButton.offsetWidth})`;
   $("#tab-panel").setAttribute("aria-labelledby", tabButton.id);
   $("#tab-panel").innerHTML = tabPanelMarkup(tab, records[selected], accessLog);
   $("#tab-panel").scrollTop = 0;
   documentDecryption.refresh();
   if (sound) {
-    tabTransition.reveal($("#tab-panel"), !motionActive("surfaceTransitions"));
+    tabTransition.reveal($("#tab-panel"));
     audio.play("ui-tick");
   }
 }
@@ -440,7 +418,7 @@ function closeModal(afterClose?: () => void) {
   if (modalClosing) return;
   modalClosing = true;
   audio.play("page-close");
-  modalTransition!.hide(!motionActive("surfaceTransitions"), () => {
+  modalTransition!.hide(() => {
     modal = null;
     modalClosing = false;
     $("#modal-root").replaceChildren();
@@ -463,7 +441,7 @@ function renderModal() {
   const backdrop = $(".modal-backdrop");
   backdrop.hidden = true;
   modalTransition = new SurfaceTransition(backdrop, $(".terminal-modal"));
-  modalTransition.show(!motionActive("surfaceTransitions"));
+  modalTransition.show();
   if (modal !== "settings") {
     renderResults();
     requestAnimationFrame(() => {
@@ -532,28 +510,6 @@ const controlsHost: ControlsHost = {
     if (isColorTheme(theme)) prefs.colorTheme = theme;
     savePrefs();
   },
-  setMotionPreset: (preset) => {
-    prefs.motionPreset = preset;
-    prefs.motion = preset === "full" ? fullMotion() : reducedMotion();
-    savePrefs();
-  },
-  setMotion: (key, enabled) => {
-    const motionKey = key as MotionKey;
-    prefs.motion[motionKey] = enabled;
-    prefs.motionPreset = motionPresetFor(prefs.motion);
-    savePrefs();
-    const motionRoot = $("#motion-settings");
-    const advancedOpen = motionRoot.querySelector<HTMLDetailsElement>(".motion-advanced")?.open ?? false;
-    const settingsPanel = motionRoot.closest<HTMLElement>(".settings-modal");
-    const scrollTop = settingsPanel?.scrollTop ?? 0;
-    motionRoot.outerHTML = motionSettingsMarkup(prefs.motion, prefs.motionPreset);
-    $("#motion-settings").querySelector<HTMLDetailsElement>(".motion-advanced")!.open = advancedOpen;
-    requestAnimationFrame(() => {
-      if (settingsPanel) settingsPanel.scrollTop = scrollTop;
-      document.querySelector<HTMLInputElement>(`[data-motion="${motionKey}"]`)?.focus({ preventScroll: true });
-    });
-    notify(motionKey === "boot" ? "开场设置将在下次重播时生效" : enabled ? "已启用此动画" : "已关闭此动画");
-  },
   setQualityPreset: (value) => {
     if (!Object.hasOwn(qualityPresets, value)) return;
     prefs.rendering = { ...qualityPresets[value as QualityPreset] };
@@ -587,13 +543,11 @@ const controlsHost: ControlsHost = {
     viewer ??= new ModelViewer($("#stage"), () => { audio.setScene(mode); audio.play("page-close"); }, (sound) => audio.play(sound === "tick" ? "ui-tick" : sound));
     audio.setScene("viewer");
     viewer.setQuality(prefs.rendering);
-    viewer.setMotion(prefs.motion);
     scene.finishDecryption();
     viewer.open(
       records[selected].id,
       records[selected].title,
       () => activeScene.createAssemblyModel(),
-      !motionActive("viewerNavigation"),
     );
     audio.play("page-open");
   },
@@ -617,13 +571,6 @@ function setBootHold(held: boolean) {
  *  of the opening resumes from there once the scene is ready. */
 function bootClock(time: number) {
   const elapsed = time - bootStart;
-  // With the opening switched off, the composed card is a still loading screen
-  // rather than a timeline that would replay the animation the reader disabled.
-  if (!motionActive("boot") && !ready) {
-    bootStart = time - WELCOME_HOLD;
-    setBootHold(true);
-    return WELCOME_HOLD;
-  }
   if (ready || elapsed <= WELCOME_HOLD) {
     setBootHold(false);
     return elapsed;
@@ -664,7 +611,6 @@ function publishSnapshot() {
     mode,
     ready,
     hold: bootHeld,
-    motion: { reduced: motionIsReduced(), preset: prefs.motionPreset },
     bootTime: mode === "boot" ? performance.now() / 1000 - bootStart : null,
     selected: records[selected].id,
     audio: audio.stats(),
@@ -686,7 +632,7 @@ function frame(ms: number) {
   if (!viewer?.isOpen && (!cinema || cinema.time >= 17.78)) scene?.update(time, cinema);
   viewer?.update(time);
   if (scene && mode === "detail") {
-    documentDecryption.update(time, scene.decryptionFrame, !motionActive("documentReveal"));
+    documentDecryption.update(time, scene.decryptionFrame);
     $("#detail-content").style.opacity = String(scene.detailVisibility);
     $("#detail-content").style.translate =
       `0 ${(1 - scene.detailVisibility) * 18}px`;
@@ -699,10 +645,10 @@ function frame(ms: number) {
   $("#stage").style.setProperty("--detail-shade", String(mode === "boot" ? 0 : scene?.detailVisibility ?? 0));
   const currentScene = scene;
   if (currentScene) inspectionOverlay.render(currentScene.decryptionFrame,
-    (x, y) => currentScene.projectCard(x, y), Boolean(cinema), motionActive("modelDecryption"));
+    (x, y) => currentScene.projectCard(x, y), Boolean(cinema));
   if (Math.floor(time) !== lastTime) {
     lastTime = Math.floor(time);
-    updateFooterClock(new Date(), motionActive("rollingNumbers"));
+    updateFooterClock(new Date());
   }
   frameCount++;
   if (ms - frameStart > 1000) {
@@ -733,16 +679,15 @@ function bindScene(scene: ArchiveScene) {
         hoverTitle.finish();
         return;
       }
-      const animated = motionActive("rollingText") && mode === "archive";
-      const numbersAnimated = motionActive("rollingNumbers") && mode === "archive";
+      const animated = mode === "archive";
       hoverCode.update({
         value: Number(records[i].id.slice(2)),
-        animated: !label.hidden && numbersAnimated,
+        animated: !label.hidden && animated,
       });
       hoverTitle.update({ text: records[i].title, animated: !label.hidden && animated });
       label.hidden = false;
       // Prepare the first visible value so the next hover can animate immediately.
-      hoverCode.update({ animated: numbersAnimated });
+      hoverCode.update({ animated });
       hoverTitle.update({ animated });
     };
 }
@@ -758,7 +703,7 @@ async function start() {
     select(0);
     // The `?scene=` shortcuts hand the terminal straight to their mode; the
     // normal path only leaves the opening when the reader asks for the array.
-    if (sceneParams.get("scene") === "archive" || !motionActive("boot")) setMode("archive");
+    if (sceneParams.get("scene") === "archive") setMode("archive");
     if (sceneParams.get("scene") === "detail") setMode("detail");
   } catch (error) {
     console.error(error);

@@ -20,7 +20,7 @@ const output = resolve('.tools/issues');await mkdir(output,{recursive:true});
 /** The app-time seconds of the composed welcome card the opening holds on. */
 const HOLD = 16.48;
 async function fresh(options={},prefs) {
-  const context=await browser.newContext({viewport:{width:1440,height:900},serviceWorkers:'block',reducedMotion:'no-preference',...options});
+  const context=await browser.newContext({viewport:{width:1440,height:900},serviceWorkers:'block',...options});
   if(prefs)await context.addInitScript(prefs=>localStorage.setItem('rhine-settings',JSON.stringify(prefs)),prefs);
   await installSnapshot(context);
   const page=await context.newPage();page.on('pageerror',e=>report.errors.push(e.message));return {context,page};
@@ -133,21 +133,6 @@ try {
     await page.waitForTimeout(400);
     assert.equal((await stats(page)).mode,'archive','The narrow entry button enters the array');
     report.checks.push({name:'Narrow entry is gated the same way'});await context.close();
-  }
-  {
-    const {context,page}=await fresh({}, {sound:false,music:false,motion:{preset:'reduced'}});
-    const open=await gateArchive(page);
-    await page.goto(base,{waitUntil:'domcontentloaded'});
-    await page.waitForFunction(()=>window.readSnapshot().hold,null,{timeout:60000});
-    const still=await stats(page);
-    assert.equal(still.mode,'boot','A switched-off opening still covers the load');
-    assert.ok(Math.abs(still.bootTime-HOLD)<0.3,'The still card is the composed welcome frame');
-    assert.equal(await page.locator('#stage').getAttribute('data-boot'),'welcome');
-    await page.waitForTimeout(500);
-    assert.ok(Math.abs((await stats(page)).bootTime-still.bootTime)<0.05,'The still card does not advance');
-    open();
-    await page.waitForFunction(()=>window.readSnapshot().mode==='archive',null,{timeout:120000});
-    report.checks.push({name:'A switched-off opening uses the still card and enters the array'});await context.close();
   }
   if(engine!=='webkit') {
     const {context,page}=await fresh();

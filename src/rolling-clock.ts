@@ -12,12 +12,11 @@ export function createRollingClock(element: HTMLElement) {
       locales: "en-GB", format: { minimumIntegerDigits: 2, useGrouping: false }, animated: false });
   });
   let initialized = false;
-  return (date: Date, animated: boolean) => {
+  return (date: Date) => {
     const values = [date.getHours(), date.getMinutes(), date.getSeconds()];
     element.setAttribute("aria-label", values.map(n => String(n).padStart(2, "0")).join(":"));
     numbers.forEach((controller, index) => {
-      controller.update({ value: values[index], animated: animated && initialized, direction: "up" });
-      if (!animated) controller.finish();
+      controller.update({ value: values[index], animated: initialized, direction: "up" });
     });
     initialized = true;
   };

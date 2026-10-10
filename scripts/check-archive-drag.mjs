@@ -42,8 +42,7 @@ drag.move(500, 500, 100);
 assert.equal(drag.moved, true, "Out-and-back cannot become a click");
 close(drag.value.lane, 0);
 close(drag.value.row, 0);
-assert.deepEqual(drag.releaseVelocity(200, false), { lane: 0, row: 0 });
-assert.deepEqual(drag.releaseVelocity(100, true), { lane: 0, row: 0 });
+assert.deepEqual(drag.releaseVelocity(200), { lane: 0, row: 0 });
 const alternate = { lane: { x: 180, y: 100 }, row: { x: 40, y: -12 } };
 drag.start(500, 500, alternate);
 alternate.lane.x = 0;
@@ -67,10 +66,8 @@ drag.start(0, 0, projection);
 drag.move(-100, -30, 20);
 drag.move(-100, -30, 30);
 drag.move(-75, -22.5, 45);
-assert.ok(drag.releaseVelocity(45, false).row < 0);
-console.log(
-  "Free projection, direction changes, jitter, reversal and reduced motion passed.",
-);
+assert.ok(drag.releaseVelocity(45).row < 0);
+console.log("Free projection, direction changes, jitter and reversal passed.");
 const fling = (duration) => {
   const input = new ArchiveDrag();
   input.start(0, 0, projection);
@@ -82,7 +79,7 @@ const fling = (duration) => {
     );
   return new ArchiveMomentum(
     input.value.row,
-    input.releaseVelocity(duration, false).row,
+    input.releaseVelocity(duration).row,
   );
 };
 const fast = fling(80),

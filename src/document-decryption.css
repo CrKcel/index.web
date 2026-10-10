@@ -18,7 +18,3 @@
   background: #20221d;
   will-change: transform;
 }
-
-.reduce-motion .document-redaction-window {
-  display: none;
-}

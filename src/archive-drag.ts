@@ -73,11 +73,10 @@ export class ArchiveDrag {
   }
 
   /** Actual release velocity in both tracks, in cells/second. */
-  releaseVelocity(time: number, reduced: boolean): DragPosition {
+  releaseVelocity(time: number): DragPosition {
     const first = this.samples[0],
       last = this.samples.at(-1);
     if (
-      reduced ||
       !first ||
       !last ||
       time - this.lastMotion > 80 ||

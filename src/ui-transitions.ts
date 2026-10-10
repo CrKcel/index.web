@@ -13,12 +13,12 @@ export class SurfaceTransition {
     private exitDuration = 200,
   ) {}
 
-  show(reduced: boolean) {
-    this.run(true, reduced);
+  show() {
+    this.run(true);
   }
 
-  hide(reduced: boolean, finished: () => void = () => {}) {
-    this.run(false, reduced, finished);
+  hide(finished: () => void = () => {}) {
+    this.run(false, finished);
   }
 
   finish() {
@@ -31,7 +31,7 @@ export class SurfaceTransition {
     this.animations = [];
   }
 
-  private run(show: boolean, reduced: boolean, finished?: () => void) {
+  private run(show: boolean, finished?: () => void) {
     const revision = ++this.revision;
     const hidden = this.root.hidden;
     const opacity = hidden ? "0" : getComputedStyle(this.root).opacity;
@@ -52,7 +52,7 @@ export class SurfaceTransition {
       this.animations = [];
       finished?.();
     };
-    if (reduced || (!show && hidden)) {
+    if (!show && hidden) {
       complete();
       return;
     }
@@ -84,17 +84,16 @@ export class SurfaceTransition {
 export class ContentTransition {
   private animation?: Animation;
 
-  reveal(element: HTMLElement, reduced: boolean) {
+  reveal(element: HTMLElement) {
     const opacity =
       this.animation?.playState === "running"
         ? getComputedStyle(element).opacity
         : "0.35";
     this.cancel();
-    if (!reduced)
-      this.animation = element.animate([{ opacity }, { opacity: 1 }], {
-        duration: 150,
-        easing: enterEase,
-      });
+    this.animation = element.animate([{ opacity }, { opacity: 1 }], {
+      duration: 150,
+      easing: enterEase,
+    });
   }
 
   cancel() {

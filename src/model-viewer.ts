@@ -11,7 +11,6 @@ import {
   createViewerPipeline,
   resizeQuality,
 } from "./quality-renderer";
-import { fullMotion, type MotionPreferences } from "./motion-preferences";
 
 const PARTS = [
   { id: "fasteners", label: "紧固件", en: "FASTENERS", depth: 2.75 },
@@ -61,8 +60,6 @@ export class ModelViewer {
   private targetClarity = 1;
   private lastTime = 0;
   private request = 0;
-  private reduced = false;
-  private motion: MotionPreferences = fullMotion();
   private loading = false;
   private closing = false;
   private transitions: Animation[] = [];
@@ -180,39 +177,10 @@ export class ModelViewer {
     this.root.addEventListener("keydown", (event) => this.keydown(event));
   }
 
-  setMotion(value: MotionPreferences) {
-    this.motion = { ...value };
-    this.reduced = !value.viewerNavigation;
-    this.root.dataset.motionModel = value.viewerModelTransition ? "full" : "reduced";
-    this.root.dataset.motionSurface = value.surfaceTransitions ? "full" : "reduced";
-    if (!value.surfaceTransitions && this.isOpen) {
-      // Settle the current lifecycle synchronously and invalidate its callbacks.
-      this.transitionId++;
-      if (this.closing) this.finishClose();
-      else {
-        this.transitions.forEach(animation => animation.cancel());
-        this.transitions = [];
-        this.root.dataset.transition = "open";
-      }
-    }
-    if (!value.viewerModelTransition) {
-      this.modelTransition?.cancel();
-      this.modelTransition = undefined;
-      this.clarity = { value: this.targetClarity, velocity: 0 };
-      this.spread = { value: this.targetSpread, velocity: 0 };
-    }
-  }
-
-  open(
-    id: string,
-    title: string,
-    provider: () => Promise<ModelSource>,
-    reduced: boolean,
-  ) {
+  open(id: string, title: string, provider: () => Promise<ModelSource>) {
     if (this.isOpen) return;
     this.isOpen = true;
     this.closing = false;
-    this.reduced = reduced;
     this.provider = provider;
     this.opener = document.activeElement as HTMLElement | null;
     this.siblings = [...this.root.parentElement!.children]
@@ -278,14 +246,13 @@ export class ModelViewer {
       this.setStatus("已组装");
       // Render before revealing the canvas so a new model never flashes in.
       this.update(this.lastTime);
-      if (this.motion.viewerModelTransition)
-        this.modelTransition = this.canvasHost.animate(
-          [
-            { opacity: 0, transform: "scale(0.97)" },
-            { opacity: 1, transform: "scale(1)" },
-          ],
-          { duration: 380, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
-        );
+      this.modelTransition = this.canvasHost.animate(
+        [
+          { opacity: 0, transform: "scale(0.97)" },
+          { opacity: 1, transform: "scale(1)" },
+        ],
+        { duration: 380, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+      );
     } catch (error) {
       if (!this.isOpen || this.closing || ticket !== this.request) return;
       this.loading = false;
@@ -299,10 +266,6 @@ export class ModelViewer {
     const ticket = ++this.transitionId;
     this.transitions.forEach((animation) => animation.cancel());
     this.transitions = [];
-    if (!this.motion.surfaceTransitions) {
-      this.root.dataset.transition = "open";
-      return;
-    }
     const fade = this.root.animate([{ opacity: 0 }, { opacity: 1 }], {
       duration: 320,
       easing: "cubic-bezier(0.22, 1, 0.36, 1)",
@@ -354,10 +317,6 @@ export class ModelViewer {
     this.transitions.forEach((animation) => animation.cancel());
     this.transitions = [];
     this.root.dataset.transition = "closing";
-    if (!this.motion.surfaceTransitions) {
-      this.finishClose();
-      return;
-    }
     const fade = this.root.animate([{ opacity }, { opacity: 0 }], {
       duration: 220,
       easing: "cubic-bezier(0.4, 0, 1, 1)",
@@ -418,7 +377,6 @@ export class ModelViewer {
     this.root.dataset.surface = clear ? "clear" : "frosted";
     this.root.querySelector('[data-viewer="clear"]')!.setAttribute("aria-pressed", String(clear));
     this.root.querySelector('[data-viewer="frosted"]')!.setAttribute("aria-pressed", String(!clear));
-    if (!this.motion.viewerModelTransition) this.clarity = { value: this.targetClarity, velocity: 0 };
   }
   private setExploded(value: boolean) {
     this.targetSpread = value ? 1 : 0;
@@ -432,7 +390,6 @@ export class ModelViewer {
     this.setStatus(
       value ? "正在拆解" : this.spread.value > 0.001 ? "正在重组" : "已组装",
     );
-    if (!this.motion.viewerModelTransition) this.spread = { value: this.targetSpread, velocity: 0 };
   }
   private setStatus(value: string) {
     if (value !== this.status) {
@@ -448,7 +405,7 @@ export class ModelViewer {
     this.controlCamera.position.copy(this.initialCamera);
     this.controls.enableDamping = false;
     this.controls.update();
-    if (animated && this.motion.viewerNavigation) this.cameraMotion.reset();
+    if (animated) this.cameraMotion.reset();
     else this.cameraMotion.snap(this.controlCamera, this.controls.target);
     this.controls.enabled =
       this.isOpen && !this.loading && Boolean(this.source);
@@ -583,8 +540,7 @@ export class ModelViewer {
       if (Math.abs(this.clarity.value - this.targetClarity) < .0001 && Math.abs(this.clarity.velocity) < .001)
         this.clarity = { value: this.targetClarity, velocity: 0 };
       this.source.setClarity?.(this.clarity.value);
-      if (this.motion.viewerModelTransition) damp(this.spread, this.targetSpread, 5.5, dt);
-      else this.spread = { value: this.targetSpread, velocity: 0 };
+      damp(this.spread, this.targetSpread, 5.5, dt);
       if (
         Math.abs(this.spread.value - this.targetSpread) < 0.0001 &&
         Math.abs(this.spread.velocity) < 0.001
@@ -601,7 +557,6 @@ export class ModelViewer {
       this.controlCamera,
       this.controls.target,
       dt,
-      this.reduced,
     );
     const portrait = this.root.closest<HTMLElement>("[data-layout]")?.dataset.layout === "portrait";
     const zoom = portrait ? Math.min(1.15, this.camera.aspect / 0.85) / (1 + 0.08 * this.spread.value) : 1;

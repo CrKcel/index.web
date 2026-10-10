@@ -131,14 +131,14 @@ const movedLandscapeAim = planArchiveCamera({
 }).aim;
 assert.notDeepEqual(movedLandscapeAim.toArray(), landscapeAim.toArray(), "A detail framing follows the model");
 
-// Pointer parallax is gated by both the motion preference and the UI-only flag.
+// Pointer parallax is gated by the planner flag and the UI-only flag.
 const parallax = planArchiveCamera({ ...base, pointer: { x: 0.5, y: 0.5 }, pointerParallax: true });
 close(parallax.position.x - settled.position.x, 0.06, "Pointer parallax offsets the camera");
 close(parallax.position.y - settled.position.y, -0.06, "Pointer parallax offsets the camera vertically");
 assert.deepEqual(
   planArchiveCamera({ ...base, pointer: { x: 0.5, y: 0.5 } }).position.toArray(),
   settled.position.toArray(),
-  "Parallax stays off while the motion preference is off",
+  "Parallax stays off while the planner flag is off",
 );
 assert.deepEqual(
   planArchiveCamera({ ...base, pointer: { x: 0.5, y: 0.5 }, pointerParallax: true, uiOnlyParallax: true }).position.toArray(),

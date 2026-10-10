@@ -843,9 +843,6 @@ button {
   pointer-events: none;
   transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
 }
-.reduce-surfaces .tab-indicator {
-  transition: none;
-}
 .tab-panel {
   height: 189px;
   padding-top: 22px;
@@ -1347,120 +1344,13 @@ button {
   top: 4px;
   transition: transform 0.3s;
 }
-.settings-list input:checked + .toggle,
-.motion-settings input:checked + .toggle {
+.settings-list input:checked + .toggle {
   background: #565c46;
 }
-.settings-list input:checked + .toggle:after,
-.motion-settings input:checked + .toggle:after {
+.settings-list input:checked + .toggle:after {
   transform: translateX(26px);
 }
 .settings-list input:focus-visible + .toggle {
-  outline: 2px solid #a67d48;
-  outline-offset: 5px;
-}
-.motion-settings {
-  margin-top: 26px;
-  border-top: 1px solid #c1b8a7;
-}
-.motion-settings-head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 22px 0 12px;
-}
-.motion-settings-head > div {
-  flex: 1;
-}
-.motion-settings-head strong {
-  display: block;
-  font-size: 12px;
-  letter-spacing: 0.8px;
-  font-weight: 400;
-}
-.motion-settings-head span {
-  display: block;
-  margin-top: 7px;
-  color: #938977;
-  font-size: 12px;
-}
-.motion-settings-head button {
-  min-height: 32px;
-  padding: 0 9px;
-  border: 1px solid #c9c1b2;
-  color: #6f695b;
-  font-size: 10px;
-  white-space: nowrap;
-}
-.motion-settings-head button[aria-pressed="true"] {
-  background: #565c46;
-  border-color: #565c46;
-  color: #f5f2e9;
-}
-.motion-settings-head button:disabled {
-  cursor: default;
-  opacity: 0.7;
-}
-.motion-advanced summary {
-  cursor: pointer;
-  font-size: 13px;
-  padding: 15px 0;
-}
-.motion-groups {
-  padding-bottom: 4px;
-}
-.motion-settings fieldset {
-  border: 0;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  column-gap: 32px;
-}
-.motion-settings legend {
-  grid-column: 1 / -1;
-  padding: 18px 0 8px;
-  color: #8e826f;
-  font-size: 9px;
-  letter-spacing: 1px;
-}
-.motion-setting {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 14px 0;
-  border-top: 1px solid #ded6c8;
-  cursor: pointer;
-  position: relative;
-}
-.motion-setting-fill {
-  border-top: 1px solid #ded6c8;
-}
-.motion-setting > div {
-  min-width: 0;
-}
-.motion-setting strong {
-  display: block;
-  font-size: 10px;
-  letter-spacing: 0.6px;
-  font-weight: 400;
-}
-.motion-setting span {
-  display: block;
-  margin-top: 5px;
-  color: #938977;
-  font-size: 11px;
-}
-.motion-setting input {
-  position: absolute;
-  right: 0;
-  opacity: 0;
-  width: 60px;
-  height: 40px;
-  cursor: pointer;
-}
-.motion-setting input:focus-visible + .toggle {
   outline: 2px solid #a67d48;
   outline-offset: 5px;
 }
@@ -1721,12 +1611,6 @@ button {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
-}
-.reduce-motion * {
-  animation-duration: 0.01ms !important;
-  animation-iteration-count: 1 !important;
-  transition-duration: 0.01ms !important;
-  transition-delay: 0s !important;
 }
 /* Reading sizes for the extended research workspace. */
 .metadata dt {
@@ -2068,11 +1952,6 @@ button {
   opacity: 0.35;
   cursor: wait;
 }
-.model-viewer[data-motion-model="reduced"] .viewer-parts,
-.model-viewer[data-motion-model="reduced"] .viewer-actions button {
-  transition: none;
-}
-
 /* Use the same rolling engine as archive numbers, with quieter text blur. */
 #selected-title,
 #column-name,

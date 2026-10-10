@@ -1,20 +1,17 @@
 // The rolling number and text widgets of the archive view.
 //
-// Construction lives here so the page only has to push new values; the animated
-// flags are seeded from the motion preference and then kept up to date by the
-// settings path, which owns the live preference object.
+// Construction lives here so the page only has to push new values.
 import { createRollingClock } from "./rolling-clock";
 import { createRollingNumber, createRollingText } from "@kitlangton/rolling-number";
-import { motionEnabled, type MotionPreferences } from "./motion-preferences";
 
 const $ = <T extends HTMLElement = HTMLElement>(selector: string) =>
   document.querySelector<T>(selector)!;
 
-export function createArchiveWidgets(motion: MotionPreferences) {
+export function createArchiveWidgets() {
   const rollingMotion = {
     duration: 460,
     motionBlur: true,
-    animated: motionEnabled(motion, "rollingNumbers"),
+    animated: true,
   };
   const updateFooterClock = createRollingClock($("#clock"));
   const numberOptions = {
@@ -37,7 +34,6 @@ export function createArchiveWidgets(motion: MotionPreferences) {
   };
   const textOptions = {
     ...rollingMotion,
-    animated: motionEnabled(motion, "rollingText"),
     transition: "direct" as const,
     stagger: "none" as const,
   };

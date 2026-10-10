@@ -48,7 +48,6 @@ export interface ArchivePointerHost {
   /** Add a sideways rotation to the extracted file, in radians. */
   rotate(delta: number): void;
   clearVelocity(): void;
-  momentumEnabled(): boolean;
   relayActive(): boolean;
 }
 
@@ -274,15 +273,13 @@ export class ArchivePointer {
       if (!this.cancelled && this.browse && this.host.canBrowse()) {
         this.moveArchive(e);
         if (this.drag.active) {
-          if (this.host.momentumEnabled()) {
-            this.coast = {
-              time: performance.now() / 1000,
-              motion: new ArchivePlaneMomentum(
-                this.host.coordinates(),
-                this.drag.releaseVelocity(e.timeStamp, false),
-              ),
-            };
-          }
+          this.coast = {
+            time: performance.now() / 1000,
+            motion: new ArchivePlaneMomentum(
+              this.host.coordinates(),
+              this.drag.releaseVelocity(e.timeStamp),
+            ),
+          };
         } else if (!this.moved) {
           const cell = this.host.pickCell(e.clientX, e.clientY);
           if (cell) this.host.emitSelect(cell);

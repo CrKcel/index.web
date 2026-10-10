@@ -39,16 +39,7 @@ export class ViewerCameraMotion {
     goal.lookAt(target);
   }
 
-  update(
-    goal: THREE.PerspectiveCamera,
-    target: THREE.Vector3,
-    dt: number,
-    reduced = false,
-  ) {
-    if (reduced) {
-      this.snap(goal, target);
-      return;
-    }
+  update(goal: THREE.PerspectiveCamera, target: THREE.Vector3, dt: number) {
     this.desired.setFromVector3(this.offset.copy(goal.position).sub(target));
     if (this.resetting) {
       this.elapsed += Math.max(0, dt);

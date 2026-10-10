@@ -37,10 +37,6 @@
   background: #414639;
   animation: welcome-progress 1.3s ease-in-out infinite;
 }
-.reduce-motion .welcome-status > i:after {
-  animation: none;
-  width: 100%;
-}
 @keyframes welcome-progress {
   from {
     transform: translateX(-60px);

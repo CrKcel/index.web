@@ -17,7 +17,6 @@ const base = {
   scanBlend: 0,
   idleGain: 0,
   flatMix: 0,
-  selectionWave: true,
   pulses: [],
   selectionPulse: () => 0,
   deferSelectionPulse: false,
@@ -70,15 +69,10 @@ assert.equal(
   "A relay lift adds exactly its height",
 );
 
-// Selection ripples are gated by the motion preference and the pulse gain.
+// Selection ripples are gated by the pulse gain.
 const pulse = [{ row: 13, lane: 2, time: 25.88 - 0.15 }];
 const rippled = at(13, 2, { pulses: pulse, selectionPulse: (d, age) => 0.8 * Math.exp(-age) });
 assert.ok(rippled > at(13, 2) + 0.2, "A live pulse raises the selected cell");
-assert.equal(
-  at(13, 2, { pulses: pulse, selectionWave: false, selectionPulse: () => 1 }),
-  at(13, 2, { selectionWave: false }),
-  "Selection ripples stay off while the motion preference is off",
-);
 assert.equal(
   at(13, 2, { pulses: pulse, pulseGain: 0, selectionPulse: () => 1 }),
   at(13, 2),

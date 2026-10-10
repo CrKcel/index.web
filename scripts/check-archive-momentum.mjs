@@ -184,23 +184,6 @@ try {
     await page.waitForTimeout(500);
     assert.deepEqual((await stats(page)).selectedCell, keyboard.selectedCell);
 
-    await page.locator('[data-action="settings"]').click();
-    await page.locator('[data-action="motion-preset"][data-preset="reduced"]').click();
-    await page.locator('[data-action="close-modal"]').click();
-    await page.waitForFunction(
-      () => !document.querySelector(".modal-backdrop"),
-    );
-    assert.equal(
-      (await stats(page)).motion.reduced,
-      true,
-      "The reduced preset applies before the next gesture",
-    );
-    await fling(8);
-    assert.equal(
-      (await stats(page)).archiveMomentum,
-      null,
-      "Reduced motion skips continued scrolling",
-    );
     assert.deepEqual(errors, []);
     report.push({
       mobile,

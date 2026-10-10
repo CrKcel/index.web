@@ -28,7 +28,6 @@ export const browserChecks = [
   "check-pwa-recovery.mjs",
   "check-responsive.mjs",
   "check-startup-entry.mjs",
-  "check-startup-motion.mjs",
   "check-array-input.mjs",
   "check-archive-momentum.mjs",
   "check-archive-diagonal.mjs",

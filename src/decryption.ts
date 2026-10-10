@@ -146,22 +146,16 @@ export class DecryptionController {
     this.clarity = 1;
     this.frame = decryptionFrame(DECRYPTION_END);
   }
-  update(dt: number, reduced: boolean, referenceTime?: number) {
+  update(dt: number, referenceTime?: number) {
     if (referenceTime !== undefined) {
       this.frame = decryptionFrame(referenceTime);
       this.clarity = this.frame.clarity;
       return;
     }
     if (!this.active) {
-      this.clarity = reduced
-        ? 0
-        : this.clarity * Math.exp(-Math.max(0, dt) * 9);
+      this.clarity = this.clarity * Math.exp(-Math.max(0, dt) * 9);
       if (this.clarity < 0.0001) this.clarity = 0;
       this.frame = decryptionFrame(-1);
-      return;
-    }
-    if (reduced) {
-      this.finish();
       return;
     }
     this.elapsed = Math.min(

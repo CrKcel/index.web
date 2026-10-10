@@ -69,16 +69,13 @@ export class DocumentDecryption {
     this.paint();
   }
 
-  update(now: number, frame: DecryptionFrame, reduced: boolean) {
+  update(now: number, frame: DecryptionFrame) {
     if (!this.root || this.progress === 1) return;
-    if (reduced) this.progress = 1;
-    else {
-      // Keep covered through joining / holding / retraction. The text starts
-      // opening with the glass, and its easing tail lasts a little longer.
-      if (this.started === null && frame.clarity > 0) this.started = now;
-      if (this.started !== null)
-        this.progress = Math.min(1, Math.max(0, (now - this.started) / 0.95));
-    }
+    // Keep covered through joining / holding / retraction. The text starts
+    // opening with the glass, and its easing tail lasts a little longer.
+    if (this.started === null && frame.clarity > 0) this.started = now;
+    if (this.started !== null)
+      this.progress = Math.min(1, Math.max(0, (now - this.started) / 0.95));
     if (this.progress === 1) this.remove();
     else if (this.started !== null) this.paint();
   }

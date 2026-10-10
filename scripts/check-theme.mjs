@@ -26,10 +26,11 @@ wave.beginFrame();
 assert.equal(wave.sample(center, 2), 0);
 assert.equal(wave.sample(far, 2), 0);
 assert.equal(wave.background(2), 0);
-// Reduced motion skips the cascade and lands on the target immediately.
+// The immediate form skips the cascade and lands on the target at once, which
+// the first paint uses so a reload never animates from the other theme.
 wave.set(true, 3, center, true);
 assert.equal(wave.sample(far, 3), 1);
-assert.equal(wave.background(3), 1, "Reduced motion goes directly to target");
+assert.equal(wave.background(3), 1, "An immediate theme change lands on its target");
 // Cells that enter the pool while the wave is settled must not replay it.
 const settled = new ThemeWave();
 settled.set(true, 12, center);
@@ -140,5 +141,5 @@ assert.equal(
   "A light reader must not be painted dark first",
 );
 console.log(
-  "Theme cascade, reversal continuity, endpoints, settled pool, reduced motion, cast/bootstrap drift and dark first paint passed.",
+  "Theme cascade, reversal continuity, endpoints, settled pool, immediate change, cast/bootstrap drift and dark first paint passed.",
 );
