@@ -3,7 +3,6 @@ import { fitElement, measureLine, onTextFitRefit } from "./text-fit";
 
 /** Fixed opening phrases, revealed letter by letter in the system font stack. */
 const phrases = {
-  access: "ACCESS PERMISSION REQUIRED",
   identity: "ID CONFIRMED : JOYCE MOORE",
   request: "REQUEST RECEIVED",
   processing: "START PROCESSING...",

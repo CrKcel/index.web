@@ -13,6 +13,7 @@ import { ArchiveScene } from "./scene";
 import { ModelViewer } from "./model-viewer";
 import { ContentTransition, SurfaceTransition } from "./ui-transitions";
 import { BootSequence } from "./boot";
+import { BOOT_START } from "./boot-motion";
 import { wrap, type ArchiveNavigation } from "./archive-loop";
 import {
   records,
@@ -323,7 +324,7 @@ function replayBoot() {
   closeModal(() => replayBootAfterModal());
 }
 function replayBootAfterModal() {
-  bootStart = performance.now() / 1000 - 1.76;
+  bootStart = performance.now() / 1000 - BOOT_START;
   lastStep = "";
   setMode(motionActive("boot") ? "boot" : "archive");
   audio.restartBoot();
@@ -773,7 +774,7 @@ updateSelection();
 // The page opens itself: the calibrated opening starts on the first frame while
 // the archive model and the score stream in behind it. Nothing here waits for
 // audio, and the opening clock only waits for the scene.
-bootStart = performance.now() / 1000 - 1.76;
+bootStart = performance.now() / 1000 - BOOT_START;
 audio.restartBoot();
 setMode("boot");
 $("#boot-error").querySelector("button")!.addEventListener("click", () => location.reload());

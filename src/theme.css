@@ -73,7 +73,7 @@
 [data-dark-surface="true"] :is(.detail-rule, .solid-button) { background: var(--theme-ink); color: var(--theme-paper); }
 [data-dark-surface="true"] .solid-button > span { color: inherit; }
 [data-dark-surface="true"] :is(.audio-volume input, .quality-range input) { accent-color: var(--theme-accent); }
-[data-dark-surface="true"] :is(.boot, .access-text, .boot-logo, .auth-status, .scan, .welcome-logo, .welcome-database) { color: var(--theme-ink); }
+[data-dark-surface="true"] :is(.boot, .boot-logo, .auth-status, .scan, .welcome-logo, .welcome-database) { color: var(--theme-ink); }
 [data-dark-surface="true"] .scan [fill="#080a08"] { fill: var(--theme-ink); }
 [data-dark-surface="true"] .scan [fill="#fff"] { fill: var(--theme-line); }
 [data-dark-surface="true"] .boot-background [stroke="#fff"] { stroke: var(--theme-line); }

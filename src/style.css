@@ -240,17 +240,6 @@ button {
   --fit-width: 900px;
   font-size: calc(var(--font-base) * var(--text-fit, 1));
 }
-.access-text {
-  --font-base: 18px;
-  --fit-width: 420px;
-  position: absolute;
-  top: 532px;
-  left: 800px;
-  width: 420px;
-  text-align: left;
-  font-size: calc(var(--font-base) * var(--text-fit, 1));
-  opacity: 0;
-}
 .scan {
   position: absolute;
   left: 410px;
@@ -1563,14 +1552,9 @@ button {
 [data-mode="boot"] .powered {
   opacity: 1;
 }
-[data-boot="access"] .brand,
-[data-boot="access"] .powered,
 [data-boot="logo"] .brand,
 [data-boot="logo"] .powered {
   opacity: 0;
-}
-[data-boot="access"] .access-text {
-  opacity: 1;
 }
 [data-boot="logo"] .boot-logo {
   opacity: 1;

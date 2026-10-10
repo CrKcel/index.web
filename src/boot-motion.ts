@@ -3,6 +3,11 @@
 import { brandTrack, companyTrack, scanTrack, track } from "./boot-tracks";
 import { scanOrbitTrack } from "./boot-orbit-tracks";
 import { bootLogoTrack } from "./boot-logo-tracks";
+/** Seconds between the source film and app time. */
+export const FOOTAGE_OFFSET = 5;
+/** App time where the opening becomes visible: the brand lockup, which the
+ *  source film reaches after its access notice. */
+export const BOOT_START = 4.12;
 export const progress = (t: number, a: number, b: number) =>
   Math.max(0, Math.min(1, (t - a) / (b - a)));
 export const smooth = (p: number) => p * p * (3 - 2 * p);
@@ -17,23 +22,12 @@ const typed = (text: string, f: number, start: number, end: number) =>
         ),
   );
 const at = (f: number, frames: number[]) => frames.includes(f);
-const accessCounts = [
-  1, 1, 3, 4, 5, 6, 9, 11, 12, 14, 17, 18, 19, 20, 22, 23, 25, 26,
-];
 
 export function bootMotion(appTime: number) {
-  const t = appTime + 5;
+  const t = appTime + FOOTAGE_OFFSET;
   const f = Math.floor(t * 25 + 0.00001);
   const step =
-    t < 9.12
-      ? "access"
-      : t < 11.12
-        ? "logo"
-        : t < 19.48
-          ? "auth"
-          : t < 22.76
-            ? "scan"
-            : "welcome";
+    t < 11.12 ? "logo" : t < 19.48 ? "auth" : t < 22.76 ? "scan" : "welcome";
   let auth = "";
   if (f < 363) {
     auth = typed("ID CONFIRMED", f, 282, 295);
@@ -57,11 +51,6 @@ export function bootMotion(appTime: number) {
     f,
     step,
     auth,
-    access: "ACCESS PERMISSION REQUIRED".slice(
-      0,
-      f < 170 ? 0 : accessCounts[Math.min(17, f - 170)],
-    ),
-    accessOpacity: f >= 170 && f < 227 ? (f === 226 ? 0.25 : 1) : 0,
     logoOpacity: t >= 9.16 && t < 19.48 ? 1 : 0,
     logo: bootLogoTrack(frame),
     logoLetters: typed("RHINE·LAB", f, 232, 255),

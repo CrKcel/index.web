@@ -28,11 +28,9 @@ export class BootSequence {
   private caps: SVGCircleElement[];
   private companyInk: HTMLElement[];
   private poweredHTML: string;
-  private accessLettering: BootLettering;
   private authLettering: BootLettering;
   constructor(private stage: HTMLElement) {
     [
-      ".access-text",
       ".boot-logo",
       ".auth-status",
       "#auth-message",
@@ -116,8 +114,6 @@ export class BootSequence {
     this.fitBrandAnalysis(this.brandLines[2]);
     // Bind after collecting the scan's animated geometry; the phrase hosts are
     // rebuilt with letter cells once the original nodes are captured.
-    this.accessLettering = new BootLettering(this.el(".access-text"), ["access"]);
-    this.accessLettering.fitWithin();
     this.authLettering = new BootLettering(this.el("#auth-message"), [
       "identity", "request", "processing", "processingGlitch",
     ]);
@@ -172,8 +168,6 @@ export class BootSequence {
     const s = bootMotion(time),
       t = s.t;
     this.stage.dataset.bootFrame = String(s.f);
-    this.accessLettering.setText(s.access);
-    this.opacity(".access-text", s.accessOpacity);
     this.opacity(".boot-logo", s.logoOpacity);
     this.el(".boot-logo").style.transform =
       `translate(${s.logo.offsetX}px, 1px)`;

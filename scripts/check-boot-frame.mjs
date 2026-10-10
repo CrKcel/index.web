@@ -12,6 +12,23 @@ import {
   bootStep,
   bootTitle,
 } from "../src/boot-frame.ts";
+import { BOOT_START, FOOTAGE_OFFSET, bootMotion } from "../src/boot-motion.ts";
+import { BOOT_CUES } from "../src/audio-types.ts";
+import { TYPING_FRAMES } from "../src/typing-rhythm.ts";
+
+// The opening becomes visible at the brand lockup. The audio facade seeds its
+// previous sample with the same footage time, so a start at or after the first
+// authored cue would swallow that cue, and any lettering frame before the start
+// would reveal text the reader never sees.
+assert.equal(bootMotion(BOOT_START).step, "logo");
+assert.ok(
+  BOOT_START + FOOTAGE_OFFSET < BOOT_CUES[0].time,
+  "The opening starts before its first authored cue",
+);
+assert.ok(
+  TYPING_FRAMES.every((frame) => frame / 25 > BOOT_START + FOOTAGE_OFFSET),
+  "No lettering is revealed before the opening becomes visible",
+);
 
 // The lettering sequence reports its own steps; the array timeline overrides it.
 assert.equal(bootStep(ARRAY_ENTRY - 0.01, "welcome"), "welcome");
@@ -55,4 +72,6 @@ for (let t = 21; t <= 35; t += 0.05) {
   previous = frame;
 }
 
-console.log("Opening steps, entry fades and the cinematic channels passed.");
+console.log(
+  "Opening start, steps, entry fades and the cinematic channels passed.",
+);
