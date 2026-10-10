@@ -6,7 +6,17 @@
 
 ![莱茵生命终端：由透明档案盒构成的三维阵列](docs/archive.jpg)
 
-界面采用 **TypeScript + Three.js + Vite**，运行时实时渲染三维模型，开场由 DOM / SVG 与场景时间轴驱动；模型通过 Blender MCP 制作，源工程与可复现脚本保存在 [`art/`](art/)。
+界面采用 **TypeScript + Three.js + Vite**，运行时实时渲染三维模型，开场由 DOM / SVG 与场景时间轴驱动；模型源工程与可复现脚本保存在 [`art/`](art/)。
+
+## 文档
+
+| 文档 | 内容 |
+| --- | --- |
+| [`AGENTS.md`](AGENTS.md) | 命令、检查与浏览器回归、部署与验收、档案与字体约束 |
+| [`docs/DESIGN.md`](docs/DESIGN.md) | 视觉、相机、材质与运动基准 |
+| [`docs/CLOUDFLARE-DEPLOYMENT.md`](docs/CLOUDFLARE-DEPLOYMENT.md) | Cloudflare 发行包内容、缓存语义与额度 |
+| [`content/README.md`](content/README.md) | 档案字段与修改步骤 |
+| [`public/audio/README.md`](public/audio/README.md) | 配乐与音效来源 |
 
 ## 工程结构
 
@@ -33,41 +43,10 @@
 | [`src/data.ts`](src/data.ts) | 档案类型与阵列位置映射 |
 | [`public/assets/`](public/assets/) | 运行所需的 GLB 模型 |
 | [`art/`](art/) | Blender 源文件、建模与审阅脚本 |
-| [`scripts/`](scripts/) | 构建、部署、内容校验与行为检查；浏览器回归的运行器见 [`scripts/check-browser.mjs`](scripts/check-browser.mjs) |
-| [`docs/`](docs/) | 设计约束、部署与验收说明、README 截图 |
-| [`docs/DESIGN.md`](docs/DESIGN.md) | 视觉、相机、材质与运动约束 |
+| [`scripts/`](scripts/) | 构建、部署、内容校验与行为检查 |
+| [`docs/`](docs/) | 本文档的截图与设计、部署说明 |
 
-原片时间轴使用 160 个阵列位置；交互模式按当前镜头与视口计算候选范围并裁剪屏幕外档案，让有限的档案内容可以持续循环。
-
-### 修改与复核
-
-修改档案内容从 [`content/archives.json`](content/archives.json) 入手，字段与操作步骤见 [档案修改说明](content/README.md)。`npm run dev` 与 `npm run build` 会先校验数据；档案下载由页面用同一份数据生成。`npm run check:content` 检查数据规则与下载文本。
-
-```sh
-npm run check  # 免浏览器的全部检查，清单见 scripts/check.mjs，也是 CI 跑的那一套
-```
-
-`npm run check` 覆盖内容规则、视口与取景、相机取景端点、表面波场、开场帧、字体栈一致性、运动与循环、拖拽与惯性、可见性覆盖、外观与解密轨迹、外壳与装配、画质上限、渲染去重、主题波、音效与配乐逻辑与 PWA 重定向。检查脚本直接运行 `src/` 的 TypeScript 源码，需要 Node 24 或更高版本；清单外的 `scripts/check-*.mjs` 会让运行器直接报错。
-
-浏览器回归默认不跑：它驱动真实 Chrome 等待动画实时推进，一轮约 6 分钟，只有改动落在浏览器行为上时才运行，通常先用 `--only` 缩小范围。运行器会自己在 `127.0.0.1:5204` 提供刚构建的 `dist`，并在 `.tools/pwa-previous` 保留一份较早的发行副本供 `check-pwa-recovery` 比对，最后逐项打印结果与耗时；已有 `npm run dev` / `npm run preview` 时用 `REVIEW_URL` 指向它，已有旧发行包时用 `PWA_PREVIOUS_DIST` 覆盖快照。检查读取 `#stage[data-stats]` 上由页面每帧写入的只读 JSON 快照（定义见 [`scripts/page-snapshot.mjs`](scripts/page-snapshot.mjs)），应用本身不暴露任何 JavaScript 测试接口。
-
-```sh
-npm run check:browser                                        # 全部浏览器回归，约 6 分钟
-node scripts/check-browser.mjs --only=responsive,momentum    # 只跑受影响项（名称按 check-*.mjs）
-```
-
-浏览器回归需要 `npm i -D playwright && npx playwright install chromium`，或把 `PLAYWRIGHT_MODULE` 指向已有的安装。脚本优先用系统中的 Chrome 无头运行；找不到时回退到 Playwright 自带的 Chromium，并改为有窗口运行，因为它的无头构建是软件渲染、跑不到实时，动画等待会超时。`REVIEW_CHANNEL` 可指定浏览器（`chromium` 表示强制使用自带构建），`REVIEW_HEADED=1` 强制有窗口运行。视觉效果仍需在浏览器中实际查看，尤其是快速切换、模型归位、文档揭示及查看器进出过渡。
-
-### 交付与验收
-
-`npm run build` 生成 `dist` 与带内容版本的 Service Worker，`npm run build:worker` 生成 `release/cloudflare/site` 发行包，`npm run deploy` 由 Wrangler 上传；上线后用 `npm run check:deployment` 逐字节比对线上文件、缓存标头与 404 页面。推送与合并请求由 `.github/workflows/checks.yml` 运行 `npm run check` 与 `npm run build:worker`。流程与回滚方式见 [Cloudflare 部署与验收](docs/CLOUDFLARE-DEPLOYMENT.md)。
-
-| 本地调试路径 | 用途 |
-| --- | --- |
-| `/?scene=archive` | 直接进入档案阵列 |
-| `/?scene=detail` | 直接进入档案详情 |
-
-### Blender 工程
+## Blender 工程
 
 | 文件 | 用途 |
 | --- | --- |
