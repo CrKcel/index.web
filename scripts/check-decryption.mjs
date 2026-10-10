@@ -2,7 +2,13 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { decryptionFrame, DecryptionController } from "../src/decryption.ts";
+import {
+  decryptionFrame,
+  DecryptionController,
+  DECRYPTION_START,
+  DECRYPTION_END,
+  INTERACTIVE_RATE,
+} from "../src/decryption.ts";
 import { CardAppearance } from "../src/appearance.ts";
 import { frostedTransmissionLod, FROSTED_ROUGHNESS, CLEAR_ROUGHNESS } from "../src/glass-reveal.ts";
 
@@ -46,29 +52,40 @@ assert.equal(decryptionFrame(38.84).clarity, 0);
 assert.equal(decryptionFrame(39.56).clarity, 1);
 assert.ok(length(decryptionFrame(34.64)) > 0.5, "Joining is eased, not linear");
 const a = new DecryptionController();
+const INTERACTIVE_SECONDS = (DECRYPTION_END - DECRYPTION_START) / INTERACTIVE_RATE;
 a.enter();
-a.update(3, false, false);
-assert.equal(a.frame.phase, "waiting");
-a.update(0, true, false);
-for (let i = 0; i < 120; i++) a.update(1 / 30, true, false);
-assert.equal(a.clarity, 1);
+a.update(1 / 30, false);
+assert.ok(a.frame.time > DECRYPTION_START, "Entering the mode starts the timeline immediately");
+let steps = 1;
+for (; steps < 300 && a.clarity < 1; steps++) a.update(1 / 30, false);
+assert.equal(a.clarity, 1, "The timeline reaches the clear state without an external ready cue");
+const elapsed = steps / 30;
+assert.ok(
+  Math.abs(elapsed - INTERACTIVE_SECONDS) < 0.05,
+  `The interactive timeline keeps its authored length (${elapsed.toFixed(2)}s vs ${INTERACTIVE_SECONDS.toFixed(2)}s)`,
+);
+const revealAt = (38.84 - DECRYPTION_START) / INTERACTIVE_RATE;
+assert.ok(
+  revealAt + 0.95 <= 3.1,
+  `The document opens inside the camera move, not after it (opens at ${revealAt.toFixed(2)}s)`,
+);
 a.leave();
 assert.equal(a.frame.intervals.length, 0);
-a.update(0.1, false, false);
+a.update(0.1, false);
 const returning = a.clarity;
 a.enter();
-a.update(0, true, false);
+a.update(0, false);
 assert.equal(a.clarity, returning);
-a.update(0.1, true, true);
+a.update(0.1, true);
 assert.equal(a.clarity, 1);
 assert.equal(a.frame.intervals.length, 0);
 a.select();
 assert.equal(a.clarity, 0);
-a.update(0, false, false, 35);
+a.update(0, false, 35);
 assert.equal(a.frame.phase, "joining");
-a.update(0, false, false, 39.56);
+a.update(0, false, 39.56);
 assert.equal(a.clarity, 1);
-a.update(0, false, false, 34);
+a.update(0, false, 34);
 assert.equal(a.clarity, 0, "Reference seeking is reversible");
 
 const appearance = new CardAppearance();

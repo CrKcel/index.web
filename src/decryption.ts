@@ -2,7 +2,7 @@
 // seconds, unlike the camera's historical (original minus five) time convention.
 export const DECRYPTION_START = 34.12;
 export const DECRYPTION_END = 39.56;
-const INTERACTIVE_RATE = 1.5;
+export const INTERACTIVE_RATE = 2.4;
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 const smooth = (value: number) => {
   const x = clamp(value);
@@ -128,7 +128,7 @@ export class DecryptionController {
     this.active = true;
     this.elapsed = alreadyClear
       ? (DECRYPTION_END - DECRYPTION_START) / INTERACTIVE_RATE
-      : null;
+      : 0;
     if (alreadyClear) this.finish();
   }
   leave() {
@@ -145,7 +145,7 @@ export class DecryptionController {
     this.clarity = 1;
     this.frame = decryptionFrame(DECRYPTION_END);
   }
-  update(dt: number, ready: boolean, reduced: boolean, referenceTime?: number) {
+  update(dt: number, reduced: boolean, referenceTime?: number) {
     if (referenceTime !== undefined) {
       this.frame = decryptionFrame(referenceTime);
       this.clarity = this.frame.clarity;
@@ -163,23 +163,19 @@ export class DecryptionController {
       this.finish();
       return;
     }
-    if (this.elapsed === null && ready) this.elapsed = 0;
-    else if (this.elapsed !== null)
-      this.elapsed = Math.min(
-        this.elapsed + Math.max(0, dt),
-        (DECRYPTION_END - DECRYPTION_START) / INTERACTIVE_RATE,
-      );
-    if (this.elapsed !== null) {
-      this.frame = decryptionFrame(
-        DECRYPTION_START + this.elapsed * INTERACTIVE_RATE,
-      );
-      // Re-entry during refrosting starts from the displayed material state.
-      this.clarity =
-        this.frame.clarity > this.clarity
-          ? this.frame.clarity
-          : this.frame.phase === "clear"
-            ? 1
-            : this.clarity * Math.exp(-Math.max(0, dt) * 9);
-    }
+    this.elapsed = Math.min(
+      (this.elapsed ?? 0) + Math.max(0, dt),
+      (DECRYPTION_END - DECRYPTION_START) / INTERACTIVE_RATE,
+    );
+    this.frame = decryptionFrame(
+      DECRYPTION_START + this.elapsed * INTERACTIVE_RATE,
+    );
+    // Re-entry during refrosting starts from the displayed material state.
+    this.clarity =
+      this.frame.clarity > this.clarity
+        ? this.frame.clarity
+        : this.frame.phase === "clear"
+          ? 1
+          : this.clarity * Math.exp(-Math.max(0, dt) * 9);
   }
 }

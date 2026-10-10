@@ -815,10 +815,12 @@ export class ArchiveScene {
       ? cinematic.zoom
       : THREE.MathUtils.lerp(this.detail, cameraTarget, detailBlend);
     const detail = this.detail;
-    // Keep the physical decryption timeline alive even when its model visuals
-    // are disabled; the document mask uses the same timeline independently.
-    this.decryption.update(dt, detail > .78 && this.lift.value > 3.3, false,
-      cinematic ? shot + 5 : undefined);
+    // The physical decryption timeline runs alongside the lift and the camera
+    // move instead of waiting for them to settle, so the archive is already
+    // unsealing while it travels into the reading framing. It stays alive even
+    // when the model visuals are disabled; the document mask uses the same
+    // timeline independently.
+    this.decryption.update(dt, false, cinematic ? shot + 5 : undefined);
     this.appearance.apply(this.cassette.group, smooth(this.lift.value / 0.4));
     this.appearance.setClarity(this.cassette.group, this.modelClarity());
     // Reference 26.92–27.76: the array travels horizontally into a white field.
