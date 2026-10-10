@@ -5,6 +5,7 @@
 [data-layout="opening"] .boot { inset: auto; left: calc(50% - 960px); top: calc(50% - 540px); width: 1920px; height: 1080px; }
 [data-layout="opening"] .boot-white { inset: 0; }
 [data-layout="opening"] .scan { transform: scale(var(--opening-scan-scale)); transform-origin: center; }
+[data-layout="opening"] .scan svg { overflow: visible; }
 [data-layout="opening"][data-opening-portrait="true"] :is(.access-text, .auth-status) { --font-base: 36px; }
 [data-layout="opening"][data-opening-portrait="true"] .scan > span { font-size: 52px !important; letter-spacing: 1px !important; }
 [data-layout="opening"] .archive-callout { left: 50.520833%; width: 49.479167%; }

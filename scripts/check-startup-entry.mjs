@@ -33,6 +33,20 @@ async function gateArchive(page) {
 }
 const published = page => page.waitForFunction(()=>document.querySelector('#stage')?.dataset.stats,null,{timeout:60000});
 const silent = {sound:false,music:false};
+const darkPixels = async (page,clip) => {
+  const png=(await page.screenshot({clip})).toString('base64');
+  return page.evaluate(async data=>{
+    const image=await createImageBitmap(await (await fetch(`data:image/png;base64,${data}`)).blob());
+    const canvas=document.createElement('canvas');canvas.width=image.width;canvas.height=image.height;
+    const context=canvas.getContext('2d');
+    context.drawImage(image,0,0);
+    const {data:pixels}=context.getImageData(0,0,image.width,image.height);
+    let dark=0;
+    for(let i=0;i<pixels.length;i+=4)
+      if(pixels[i]*0.299+pixels[i+1]*0.587+pixels[i+2]*0.114<190)dark++;
+    return dark;
+  },png);
+};
 try {
   {
     const {context,page}=await fresh({},silent);
@@ -96,6 +110,17 @@ try {
     const {context,page}=await fresh({viewport:{width:390,height:844},hasTouch:true,isMobile:true},silent);
     const open=await gateArchive(page);
     await page.goto(base,{waitUntil:'domcontentloaded'});
+    await published(page);
+    const frame=await page.locator('.scan').boundingBox();
+    const band={x:0,y:Math.max(0,frame.y-55),width:390,height:Math.min(55,frame.y)};
+    await page.waitForFunction(()=>window.readSnapshot().bootTime>=14,null,{timeout:60000});
+    const idle=await darkPixels(page,band);
+    assert.ok(idle<5,`The band above the film frame starts empty (${idle} dark pixels)`);
+    let drawn=idle;
+    for(let sample=0;sample<20&&drawn<20&&(await stats(page)).bootTime<15.4;sample++)
+      drawn=Math.max(drawn,await darkPixels(page,band));
+    assert.ok(drawn>=20,`The closing ring is drawn above the film frame in portrait (${drawn} dark pixels)`);
+    report.checks.push({name:'The portrait scan is clipped by the display instead of its film frame',darkPixels:drawn});
     await page.waitForFunction(()=>window.readSnapshot().hold,null,{timeout:60000});
     assert.equal(await page.locator('#skip').getAttribute('aria-disabled'),'true');
     await page.locator('#skip').click({force:true});
