@@ -1,12 +1,38 @@
 ## 范围
 
-本仓库维护网页版本的 Rhine Lab 终端，域名为 `https://index.crkcel.com/`，部署在 Cloudflare Workers 的静态资源上，Worker 名称为 `index`，配置见 `wrangler.jsonc`。技术栈、工程结构与建模脚本清单见 `README.md`。
+界面采用 **TypeScript + Three.js + Vite**，运行时实时渲染三维模型，开场由 DOM / SVG 与场景时间轴驱动；
 
-文档分工：命令、检查、部署与运行约束以本文件为准；视觉、相机、材质、字体与运动基准见 `docs/DESIGN.md`；发行包内容、缓存语义与额度见 `docs/CLOUDFLARE-DEPLOYMENT.md`；档案数据规则见 `content/README.md`；目录索引见 `README.md`。
+文档分工：命令、检查、部署与运行约束以本文件为准；视觉、相机、材质、字体与运动基准见 `docs/DESIGN.md`；发行包内容、缓存语义与额度见 `docs/CLOUDFLARE-DEPLOYMENT.md`；档案数据规则见 `content/README.md`；
+
+## 工程结构
+
+| 目录或文件 | 内容 |
+| --- | --- |
+| [`src/main.ts`](src/main.ts) | 页面状态、模式切换与动作实现 |
+| [`src/controls.ts`](src/controls.ts) | 事件委托：设置控件、目录按钮、快捷键与模态焦点陷阱 |
+| [`src/boot-frame.ts`](src/boot-frame.ts) | 开场时间轴的纯函数：步进阈值、淡入与运镜通道 |
+| [`src/stage-markup.ts`](src/stage-markup.ts)、[`src/detail-markup.ts`](src/detail-markup.ts)、[`src/directory-markup.ts`](src/directory-markup.ts)、[`src/settings-markup.ts`](src/settings-markup.ts) | 舞台、档案正文、检索目录与设置面板的标记 |
+| [`src/prefs-store.ts`](src/prefs-store.ts)、[`src/layout-fit.ts`](src/layout-fit.ts)、[`src/rolling-widgets.ts`](src/rolling-widgets.ts) | 偏好持久化、舞台标定与滚动数字/文字组件 |
+| [`src/boot.ts`](src/boot.ts)、[`src/boot-motion.ts`](src/boot-motion.ts) | 开场界面与逐帧时间轴 |
+| [`src/scene.ts`](src/scene.ts)、[`src/archive-loop.ts`](src/archive-loop.ts) | Three.js 场景、循环阵列、抽取与归位 |
+| [`src/archive-camera.ts`](src/archive-camera.ts) | 相机取景与开场运镜（纯函数，标定端点见 `docs/DESIGN.md`） |
+| [`src/archive-field.ts`](src/archive-field.ts) | 阵列表面波场：驻波、呼吸、选中涟漪与配乐位移 |
+| [`src/archive-pointer.ts`](src/archive-pointer.ts) | 指针、滚轮与拖拽手势、惯性交接与悬停采样 |
+| [`src/archive-render.ts`](src/archive-render.ts) | 合成通道链、画质开关与帧去重 |
+| [`src/archive-cassette.ts`](src/archive-cassette.ts) | 模型装配、烘焙代理、标签画布与实例打包 |
+| [`src/model-viewer.ts`](src/model-viewer.ts) | 独立模型查看器与拆解动画 |
+| [`src/decryption.ts`](src/decryption.ts)、[`src/document-decryption.ts`](src/document-decryption.ts) | 模型解密轨迹与正文同步揭示 |
+| [`src/audio.ts`](src/audio.ts) | 音频设备生命周期、手势解锁、音效节流与开场提示调度 |
+| [`src/audio-synth.ts`](src/audio-synth.ts)、[`src/audio-music.ts`](src/audio-music.ts)、[`src/audio-types.ts`](src/audio-types.ts)、[`public/audio/`](public/audio/) | 交互音效合成、三轨配乐循环与声部比例、音效清单与音源记录 |
+| [`src/render-quality.ts`](src/render-quality.ts)、[`src/quality-renderer.ts`](src/quality-renderer.ts) | 画质预设与渲染管线 |
+| [`content/archives.json`](content/archives.json) | 页面与下载共用的五类、40 份档案数据 |
+| [`src/data.ts`](src/data.ts) | 档案类型与阵列位置映射 |
+| [`public/assets/`](public/assets/) | 运行所需的 GLB 模型 |
+| [`art/`](art/) | Blender 源文件、建模与审阅脚本 |
+| [`scripts/`](scripts/) | 构建、部署、内容校验与行为检查 |
+| [`docs/`](docs/) | 本文档的截图与设计、部署说明 |
 
 ## 命令
-
-需要 Node 24 或更高版本（`package.json` 的 `engines`）：检查脚本直接以类型剥离方式运行 `src/` 的 TypeScript。
 
 | 命令 | 作用 |
 | --- | --- |
@@ -19,7 +45,7 @@
 | `npm run check:browser` | 真实浏览器回归，默认不跑，见「浏览器回归」 |
 | `npm run check:deployment` | 核验线上发行，默认 `https://index.crkcel.com/`，可传其他基址，只接受 HTTPS 基址或 `127.0.0.1` |
 
-Wrangler：`npx wrangler dev` 本地开发，`npx wrangler deploy` 部署，`npx wrangler types` 生成类型，改动绑定后运行 `wrangler types`。Cloudflare Workers 文档 https://developers.cloudflare.com/workers/ ，MCP `https://docs.mcp.cloudflare.com/mcp`，限制与配额从产品的 `/platform/limits/` 页面获取。
+Wrangler：`npx wrangler dev` 本地开发，`npx wrangler deploy` 部署，`npx wrangler types` 生成类型，改动绑定后运行 `wrangler types`。Cloudflare Workers 文档 https://developers.cloudflare.com/workers/。
 
 本地调试入口：`/?scene=archive` 直接进入档案阵列，`/?scene=detail` 直接进入档案详情。
 
@@ -49,7 +75,7 @@ Wrangler：`npx wrangler dev` 本地开发，`npx wrangler deploy` 部署，`npx
 
 ## 档案内容
 
-档案内容独立保存在 `content/archives.json`，页面与 TXT 导出共用，`npm run dev` 与 `npm run build` 构建前校验；保留五列、每列八份与稳定编号约束，字段与操作步骤见 `content/README.md`。
+档案内容独立保存在 `content/archives.json`，`npm run dev` 与 `npm run build` 构建前校验；保留五列、每列八份与稳定编号约束，字段与操作步骤见 `content/README.md`。
 
 ## 视觉与排字
 
@@ -60,5 +86,5 @@ Wrangler：`npx wrangler dev` 本地开发，`npx wrangler deploy` 部署，`npx
 
 ## 画质与声音
 
-- 画质只调整渲染精度与可选效果，不重新制作模型；默认采用原始预设，预设与参数见 `docs/DESIGN.md`。
+- 画质调整渲染精度与可选效果，默认采用原始预设，预设与参数见 `docs/DESIGN.md`。
 - 声音与音乐独立开关与音量；保留源谱与音色生成脚本，来源与处理记录见 `public/audio/README.md`。

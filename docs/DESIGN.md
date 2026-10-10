@@ -2,8 +2,6 @@
 
 ## 参考与实现
 
-参考为原片的 5–40 秒，1920×1080、25fps。应用内部时间码为原片时间减 5 秒；正常启动与重播从原片 6.76 秒的白色画面开始，黑底的鹰角网络片头不纳入。实现、命令与建模脚本见 [`AGENTS.md`](../AGENTS.md) 与 [`README.md`](../README.md)。原片与提取帧仅用于本地对照，不作为产品背景，不随仓库分发。
-
 - 暖灰白底、黑色文字、暖杏金选中信号。界面以细线和紧凑排字组织，保留原片标题与右下角署名位置。
 - 开场中央文字同样使用系统字体：访问、身份、请求、处理、授权提示、欢迎三行与左上 RHINE LAB 都按逐字单元渲染，沿用原时间轴的逐字显现、停顿与清空节奏。字形宽度不再与原片逐帧对齐，品牌与提示尺寸回落到 MiSans 时期的排字标定。
 - 模型由磨砂盖板、基板、内部光学腔、环槽、边框、螺钉、标签与刻线组成，圆环位于盖板后方。交互阵列以投影贴图绘制这一外观，代理取卡片的包围盒；开出与查看器仍使用带物理透射的完整几何。
@@ -110,3 +108,17 @@ PWA 使用 standalone 窗口、浅暖色主题与共享莱茵生命图标，iPho
 ## 动效偏好
 
 动效支持完整／减少／自定义及分组开关，首次访问跟随系统“减少动态效果”偏好，之后以本站保存的设置优先。关闭模型解密动效时详情直接清晰、阵列及归位副本恢复磨砂，正文揭示仍独立控制；主题与各项动效共存。
+
+## Blender 工程
+
+| 文件 | 用途 |
+| --- | --- |
+| [`art/rhine-archive.blend`](art/rhine-archive.blend) | 档案盒基础模型与审阅灯光 |
+| [`art/archive-assembly.blend`](art/archive-assembly.blend) | 可按六组结构拆解的模型 |
+| [`art/build_archive.py`](art/build_archive.py) | 生成基础模型与 GLB |
+| [`art/build_assembly.py`](art/build_assembly.py) | 生成拆解模型与 GLB |
+| [`art/internal_architecture.py`](art/internal_architecture.py) | 双环内构与连接带 |
+| [`art/shell_reference_details.py`](art/shell_reference_details.py) | 顶边方块、螺丝及盖板后刻线 |
+| [`art/setup_studio.py`](art/setup_studio.py) | 配置资产审阅灯光与相机 |
+
+重新建模时，可在 Blender 的脚本环境中通过 `runpy.run_path()` 执行对应脚本，或通过 Blender MCP 调用。脚本根据自身位置确定项目目录，重新生成会更新对应模型输出。
