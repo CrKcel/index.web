@@ -49,7 +49,6 @@
 [data-layout="desktop"] .file-summary { width: min(652px, calc(100% - 117px)); gap: 20px; }
 [data-layout="desktop"] .archive-navigation { left: 26.25%; }
 [data-layout="desktop"] .column-navigation { left: 52.34375%; }
-[data-layout="desktop"] .archive-hint { left: 26.302083%; }
 [data-layout="desktop"] .detail-content { left: 60.104167%; width: min(636px, 33.125%); max-height: calc(100% - 369px); overflow-y: auto; scrollbar-width: thin; }
 [data-layout="desktop"] .terminal-modal { max-width: calc(100% - 100px); }
 [data-layout="desktop"] .viewer-help, [data-layout="desktop"] .viewer-reset { width: 25%; }
@@ -63,7 +62,7 @@
 :is([data-layout="compact"], [data-layout="portrait"]) .brand { left: var(--edge); top: var(--top-edge); transform: scale(.48) !important; transform-origin: top left; }
 :is([data-layout="compact"], [data-layout="portrait"]) .system-nav { top: var(--top-edge); right: var(--edge); gap: 18px; }
 :is([data-layout="compact"], [data-layout="portrait"]) .system-nav button { min-height: 44px; min-width: 44px; font-size: 11px; justify-content: center; gap: 7px; }
-:is([data-layout="compact"], [data-layout="portrait"]) :is(.key, .powered, .archive-hint, .hover-label) { display: none; }
+:is([data-layout="compact"], [data-layout="portrait"]) :is(.key, .powered, .hover-label) { display: none; }
 :is([data-layout="compact"], [data-layout="portrait"]) .system-footer { left: var(--edge); right: var(--edge); bottom: var(--bottom-edge); font-size: 8px; gap: 12px; }
 :is([data-layout="compact"], [data-layout="portrait"]) .system-footer > span:nth-child(2) { display: none; }
 :is([data-layout="compact"], [data-layout="portrait"]) .system-footer button { margin-left: auto; font-size: 9px; min-height: 28px; }
@@ -92,11 +91,9 @@
 :is([data-layout="compact"], [data-layout="portrait"]) .column-navigation > div > span { font-size: 8px; }
 :is([data-layout="compact"], [data-layout="portrait"]) .back-button { left: var(--edge); top: 84px; min-height: 44px; gap: 8px; }
 :is([data-layout="compact"], [data-layout="portrait"]) .back-button span { font-size: 10px; }
-:is([data-layout="compact"], [data-layout="portrait"]) .back-button small { display: none; }
 :is([data-layout="compact"], [data-layout="portrait"]) .object-caption { left: var(--edge); bottom: 55px; }
 :is([data-layout="compact"], [data-layout="portrait"]) .object-caption > span { font-size: 20px; }
 :is([data-layout="compact"], [data-layout="portrait"]) .object-caption > div { font-size: 8px; }
-:is([data-layout="compact"], [data-layout="portrait"]) .object-caption > small { display: none; }
 :is([data-layout="compact"], [data-layout="portrait"]) .viewer-open { margin-top: 8px; min-height: 44px; padding: 5px 0; font-size: 12px; }
 :is([data-layout="compact"], [data-layout="portrait"]) .detail-content { left: 53%; top: 84px; width: calc(47% - var(--edge)); bottom: 53px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding: 0 3px 12px 0; }
 :is([data-layout="compact"], [data-layout="portrait"]) .detail-kicker { font-size: 9px; gap: 8px; flex-wrap: wrap; }
@@ -164,7 +161,6 @@
 :is([data-layout="compact"], [data-layout="portrait"]) .quality-range { display: block; }
 :is([data-layout="compact"], [data-layout="portrait"]) .quality-range > div { margin-top: 12px; }
 :is([data-layout="compact"], [data-layout="portrait"]) .quality-range input { width: 100%; min-width: 0; }
-:is([data-layout="compact"], [data-layout="portrait"]) .settings-shortcuts { display: none; }
 :is([data-layout="compact"], [data-layout="portrait"]) .toast { max-width: calc(100% - 40px); width: max-content; font-size: 13px; bottom: 52px; }
 
 /* Object study: keep controls outside the model's usable canvas. */

@@ -49,7 +49,7 @@ export function tabPanelMarkup(
 
 export function detailMarkup(
   record: ArchiveRecord,
-  selection: { saved: boolean; index: number; total: number },
+  selection: { saved: boolean },
 ) {
   const savedLabel = selection.saved ? "− REMOVE FROM SAVED" : "＋ SAVE ARCHIVE";
   const savedNote = selection.saved ? "已收藏" : "收藏档案";
@@ -61,5 +61,5 @@ export function detailMarkup(
   <div class="detail-tabs" role="tablist"><button id="tab-overview" class="active" role="tab" aria-controls="tab-panel" aria-selected="true" data-tab="overview">01 <span>概述</span></button><button id="tab-notes" role="tab" aria-controls="tab-panel" aria-selected="false" data-tab="notes">02 <span>研究记录</span></button><button id="tab-history" role="tab" aria-controls="tab-panel" aria-selected="false" data-tab="history">03 <span>访问日志</span></button><i class="tab-indicator" aria-hidden="true"></i></div>
   <div id="tab-panel" class="tab-panel" role="tabpanel">${overviewMarkup(record)}</div>
   <div class="detail-actions"><button class="solid-button" data-action="bookmark">${savedLabel}<span>${savedNote}</span></button><button class="export-button" data-action="export" aria-label="导出 ${record.id} 档案">EXPORT <span>↓</span></button></div>
-  <div class="detail-footnote"><a href="${escapeHtml(record.source)}" target="_blank" rel="noopener">设定参考 ↗</a><span>${String(selection.index + 1).padStart(3, "0")} / ${String(selection.total).padStart(3, "0")}</span></div>`;
+  <div class="detail-footnote"><a href="${escapeHtml(record.source)}" target="_blank" rel="noopener">设定参考 ↗</a></div>`;
 }

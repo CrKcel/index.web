@@ -356,8 +356,6 @@ function renderDetail() {
   $("#object-id").textContent = "NO." + String(selected + 1).padStart(3, "0");
   $("#detail-content").innerHTML = detailMarkup(r, {
     saved: saved.has(r.id),
-    index: selected,
-    total: records.length,
   });
   $("#detail-content").setAttribute("tabindex", "-1");
   $('[data-action="bookmark"]').setAttribute("aria-pressed", String(saved.has(r.id)));
