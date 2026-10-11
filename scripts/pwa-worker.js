@@ -62,7 +62,8 @@ self.addEventListener("fetch", event => {
   event.respondWith((async () => {
     const cache = await caches.open(CACHE);
     // HTML, hashed bundles and stable model URLs come from the same release.
-    // A new release stays waiting until the user chooses to restart or exits.
+    // A finished release waits until the page hands it over, so a session in
+    // use never mixes two releases.
     const cached = await cache.match(key);
     // A navigation uses redirect: manual and cannot consume a response whose
     // URL list contains a followed redirect (including older cached releases).

@@ -5,7 +5,7 @@ import "./decryption.css";
 import "@kitlangton/rolling-number/styles.css";
 import "./style.css";
 import "./responsive.css";
-import { initPwa } from "./pwa";
+import { applyPendingUpdate, initPwa } from "./pwa";
 import { ArchiveScene } from "./scene";
 import { ModelViewer } from "./model-viewer";
 import { ContentTransition, SurfaceTransition } from "./ui-transitions";
@@ -188,6 +188,9 @@ function setMode(next: Mode) {
   mode = next;
   audio.setScene(next);
   $("#stage").dataset.mode = next;
+  // The opening is a moment without a reader in it, so a downloaded release
+  // applies and restarts the terminal here.
+  if (next === "boot") applyPendingUpdate();
   if (previousMode !== next) fit();
   $("#boot").inert = next !== "boot";
   $("#boot").setAttribute("aria-hidden", String(next !== "boot"));
@@ -693,7 +696,7 @@ async function start() {
   } finally {
     // Do not compete with the archive download the opening is waiting on. The
     // full offline installation starts once the terminal has its resources.
-    setTimeout(() => void initPwa(notify), 1500);
+    setTimeout(() => void initPwa(notify, () => mode === "boot"), 1500);
   }
 }
 updateSelection();

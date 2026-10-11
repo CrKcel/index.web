@@ -24,6 +24,15 @@ const browser=await launchChromium(chromium);
 const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
 await context.addInitScript(()=>{if(!localStorage.getItem('rhine-settings'))localStorage.setItem('rhine-settings',JSON.stringify({sound:false,music:false}))});
 await installSnapshot(context);
+// The check owns the visibility it needs: a background tab is reported as
+// visible in some channels, while this flips `document.hidden` the way a
+// backgrounded tab does, render loop included.
+await context.addInitScript(()=>{
+  let hidden=false;
+  Object.defineProperty(Document.prototype,'hidden',{configurable:true,get:()=>hidden});
+  Object.defineProperty(Document.prototype,'visibilityState',{configurable:true,get:()=>hidden?'hidden':'visible'});
+  window.hideTerminal=()=>{hidden=true;document.dispatchEvent(new Event('visibilitychange'))};
+});
 const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
 const ready=()=>page.waitForFunction(()=>window.readSnapshot().ready&&document.documentElement.dataset.offlineReady==='true'&&navigator.serviceWorker.controller,null,{timeout:90000});
 const report={version:metadata.version,bytes:metadata.bytes,files:metadata.files.length,checks:[],errors};
@@ -50,23 +59,47 @@ try{
  await mkdir('.tools/responsive',{recursive:true});await page.screenshot({path:'.tools/responsive/pwa-offline.png'});
  assert.equal(await page.evaluate(async()=>{const r=await fetch('/audio/motif.ogg');if(!r.ok)return 0;return (await r.arrayBuffer()).byteLength}),(await readFile(resolve(root,'audio/motif.ogg'))).length,'The score is served whole from the cache');
  report.checks.push('offline reload, document export, model viewer, explosion and audio resource');
- await context.setOffline(false);revision=2;
+ const releases=async()=>(await page.evaluate(()=>caches.keys())).filter(key=>key.startsWith('rhine-lab:')).map(key=>key.split(':').pop());
+ // A downloaded release never restarts a session that is in use, and the
+ // terminal offers no update action of its own.
+ await context.setOffline(false);
+ await page.evaluate(()=>{window.__session='kept'});
+ revision=2;
  await page.evaluate(async()=>{const r=await navigator.serviceWorker.getRegistration();await r.update()});
  await page.waitForFunction(async()=>Boolean((await navigator.serviceWorker.getRegistration())?.waiting),null,{timeout:90000});
- assert.equal(await page.locator('#pwa-update-notice').isVisible(),false,'Viewer must isolate the outside update action');
+ await page.waitForTimeout(2000);
+ assert.equal(await page.evaluate(()=>window.__session),'kept','A visible session keeps running its own release');
+ assert.equal(await page.locator('#pwa-update-notice').count(),0,'The terminal has no update notice');
+ assert.equal(await page.locator('[data-pwa-action="update"]').count(),0,'Settings keep no update action');
+ assert.deepEqual((await releases()).sort(),[metadata.version,`${metadata.version}-test-2`].sort(),'The waiting release is complete but not the running one');
+ report.checks.push('a downloaded release waits while the terminal is in use and offers no manual action');
+ // Hiding the terminal is the first apply moment.
  await page.locator('[data-viewer="close"]').click();
- await page.waitForSelector('#pwa-update-notice:not([hidden])');
- assert.equal(await page.evaluate(()=>document.querySelector('#stage').dataset.mode),'detail','Waiting update must not interrupt the page');
- await Promise.all([page.waitForNavigation(),page.locator('#pwa-update-notice [data-pwa-action="update"]').click()]);await ready();
+ const hiddenApply=page.waitForNavigation({waitUntil:'load',timeout:90000});
+ await page.evaluate(()=>window.hideTerminal());
+ await hiddenApply;await ready();
  assert.equal(await page.evaluate(()=>localStorage.getItem('rhine-saved')),'["X-001"]');
- const keys=await page.evaluate(()=>caches.keys());assert.ok(keys.includes('unrelated-app'));assert.equal(keys.filter(k=>k.startsWith('rhine-lab:')).length,1);assert.ok(keys.some(k=>k.endsWith('-test-2')));
- report.checks.push('visible update action without opening settings, explicit restart, old-cache cleanup and preserved preferences/bookmarks');
- revision=3;fail=true;
+ const keys=await page.evaluate(()=>caches.keys());
+ assert.ok(keys.includes('unrelated-app'),'Unrelated caches survive the update');
+ assert.equal(keys.filter(k=>k.startsWith('rhine-lab:')).length,1);
+ assert.ok(keys.some(k=>k.endsWith('-test-2')));
+ report.checks.push('a hidden terminal applies the waiting release, cleans the old cache and keeps preferences/bookmarks');
+ // Replaying the opening is the second apply moment.
+ await page.waitForFunction(()=>window.readSnapshot().mode==='archive',null,{timeout:90000});
+ revision=3;
+ await page.evaluate(async()=>{const r=await navigator.serviceWorker.getRegistration();await r.update()});
+ await page.waitForFunction(async()=>Boolean((await navigator.serviceWorker.getRegistration())?.waiting),null,{timeout:90000});
+ const openingApply=page.waitForNavigation({waitUntil:'load',timeout:90000});
+ await page.locator('[data-action="replay"]').click();
+ await openingApply;await ready();
+ assert.ok((await releases()).includes(`${metadata.version}-test-3`),'The opening applies the waiting release');
+ report.checks.push('replaying the opening applies the waiting release without a manual restart');
+ revision=4;fail=true;
  await page.evaluate(async()=>{const r=await navigator.serviceWorker.getRegistration();await r.update()});
  await page.waitForFunction(async()=>{const r=await navigator.serviceWorker.getRegistration();return !r.installing&&!r.waiting},null,{timeout:90000});
  await context.setOffline(true);await page.reload();await ready();
- assert.ok((await page.evaluate(()=>caches.keys())).some(k=>k.endsWith('-test-2')));
- assert.ok(!(await page.evaluate(()=>caches.keys())).some(k=>k.endsWith('-test-3')));
+ assert.ok((await releases()).includes(`${metadata.version}-test-3`));
+ assert.ok(!(await releases()).includes(`${metadata.version}-test-4`));
  report.checks.push('failed update leaves the previous complete offline release usable');
  assert.deepEqual(errors,[]);console.log(JSON.stringify(report,null,2));
 }finally{await writeFile('.tools/responsive/pwa-report.json',JSON.stringify(report,null,2));await browser.close();await new Promise(r=>server.close(r))}
