@@ -6,11 +6,14 @@ import {
   INSPECTION,
   OPENING_END,
   SELECTION,
+  WELCOME_FLASH,
+  WELCOME_HOLD,
   bootCinematic,
   bootEntryOpacity,
   bootRuleScale,
   bootStep,
   bootTitle,
+  isWelcomePause,
 } from "../src/boot-frame.ts";
 import { BOOT_START, bootMotion } from "../src/boot-motion.ts";
 import { BOOT_CUES } from "../src/audio-types.ts";
@@ -75,6 +78,35 @@ assert.equal(bootTitle(23.12, "select"), "FILE NUMBER: ");
 // Entry fades and the callout rule saturate exactly at their authored ends.
 assert.equal(bootEntryOpacity(15.02), 0);
 assert.equal(bootEntryOpacity(15.15), 1);
+// A downloaded release restarts the page in the welcome pause, so the pause has
+// to be a settled frame the next load can continue from: the composed card is
+// on screen, no channel is mid-transition, the camera has not moved, and the
+// reading falls between the last text reveal and the array-entry cue so the
+// restart neither swallows a cue nor delays one.
+const pause = bootMotion(WELCOME_HOLD);
+assert.equal(pause.step, "welcome");
+assert.equal(pause.welcomeVisible, true);
+assert.equal(pause.exit, 0, "The card has not started its exit at the pause");
+assert.equal(pause.white, 0, "The white flash has not started at the pause");
+assert.equal(isWelcomePause(WELCOME_HOLD), true);
+assert.equal(isWelcomePause(WELCOME_HOLD - 0.01), false, "The restart does not fire before the pause");
+assert.equal(isWelcomePause(WELCOME_FLASH), false, "The restart does not fire once the card starts leaving");
+assert.equal(bootMotion(WELCOME_FLASH).white, 0, "The window ends where the white flash starts");
+assert.ok(bootMotion(WELCOME_FLASH + 0.04).white > 0, "The white flash follows the window");
+assert.equal(
+  BOOT_CUES.filter((cue) => cue.time < WELCOME_HOLD).at(-1).sound,
+  "text-reveal",
+);
+assert.equal(
+  BOOT_CUES.find((cue) => cue.time > WELCOME_HOLD).sound,
+  "array",
+);
+const pauseCinematic = bootCinematic(WELCOME_HOLD);
+assert.equal(
+  pauseCinematic.reveal + pauseCinematic.lift + pauseCinematic.zoom,
+  0,
+  "The camera has not moved at the pause",
+);
 assert.ok(Math.abs(bootEntryOpacity(15.085) - 0.5) < 1e-9, "The entry fade is half way at its midpoint");
 assert.equal(bootRuleScale(15.2), 0);
 assert.equal(bootRuleScale(16.1), 1);

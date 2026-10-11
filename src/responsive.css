@@ -43,7 +43,7 @@
 .three-scene canvas { touch-action: none; }
 [data-layout="desktop"] .archive-callout { left: 50.520833%; width: 49.479167%; }
 [data-layout="desktop"] .file-summary { width: min(652px, calc(100% - 117px)); gap: 20px; }
-[data-layout="desktop"] .archive-navigation { left: 26.25%; }
+[data-layout="desktop"] .archive-navigation { left: 21.302083%; }
 [data-layout="desktop"] .column-navigation { left: 52.34375%; }
 [data-layout="desktop"] .detail-content { left: 60.104167%; width: min(636px, 33.125%); max-height: calc(100% - 369px); overflow-y: auto; scrollbar-width: thin; }
 [data-layout="desktop"] .terminal-modal { max-width: calc(100% - 100px); }
@@ -67,7 +67,6 @@
 :is([data-layout="compact"], [data-layout="portrait"]) .callout-rule { margin: 8px 0 0 20px; }
 :is([data-layout="compact"], [data-layout="portrait"]) .callout-rule i { left: -20px; }
 :is([data-layout="compact"], [data-layout="portrait"]) .file-summary { margin: 12px 0 0; width: 100%; gap: 8px; font-size: 15px; flex-wrap: wrap; }
-:is([data-layout="compact"], [data-layout="portrait"]) .file-summary > span:last-child { font-size: 8px; }
 :is([data-layout="compact"], [data-layout="portrait"]) .read-file { margin: 8px 0 0; min-height: 44px; font-size: 11px; gap: 36px; }
 :is([data-layout="compact"], [data-layout="portrait"]) .archive-counter { left: var(--edge); bottom: calc(var(--bottom-edge) + 14px); }
 :is([data-layout="compact"], [data-layout="portrait"]) .archive-counter .tiny-label { font-size: 8px; }

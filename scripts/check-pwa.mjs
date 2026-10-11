@@ -1,7 +1,7 @@
 // Uses a disposable HTTP server to exercise real service-worker updates/failures.
 import { loadPlaywright } from './playwright.mjs';
 import { launchChromium } from './browser-launch.mjs';
-import { installSnapshot } from './page-snapshot.mjs';
+import { installSnapshot, snapshot as stats } from './page-snapshot.mjs';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
@@ -24,6 +24,15 @@ const browser=await launchChromium(chromium);
 const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
 await context.addInitScript(()=>{if(!localStorage.getItem('rhine-settings'))localStorage.setItem('rhine-settings',JSON.stringify({sound:false,music:false}))});
 await installSnapshot(context);
+await context.addInitScript(()=>{
+  window.__openingSnapshots=[];
+  new MutationObserver(()=>{
+    const raw=document.querySelector('#stage')?.dataset.stats;
+    if(!raw||window.__openingSnapshots.length>=3)return;
+    const snapshot=JSON.parse(raw);
+    if(snapshot.mode==='boot')window.__openingSnapshots.push(snapshot);
+  }).observe(document,{subtree:true,attributes:true,attributeFilter:['data-stats']});
+});
 // The check owns the visibility it needs: a background tab is reported as
 // visible in some channels, while this flips `document.hidden` the way a
 // backgrounded tab does, render loop included.
@@ -88,18 +97,60 @@ try{
  revision=3;
  await page.evaluate(async()=>{const r=await navigator.serviceWorker.getRegistration();await r.update()});
  await page.waitForFunction(async()=>Boolean((await navigator.serviceWorker.getRegistration())?.waiting),null,{timeout:90000});
+ await page.evaluate(()=>{window.__replay='same-document'});
+ const started=Date.now();
  const openingApply=page.waitForNavigation({waitUntil:'load',timeout:90000});
+ openingApply.catch(()=>{});
  await page.locator('[data-action="settings"]').click();
  await page.locator('[data-action="restart"]').click();
- await openingApply;await ready();
+ await page.waitForFunction(()=>window.readSnapshot().bootTime>6,null,{timeout:90000});
+ assert.equal(await page.evaluate(()=>window.__replay),'same-document','The replay is not cut off before its pause');
+ await openingApply;
+ const untilRestart=(Date.now()-started)/1000;
+ assert.ok(untilRestart>12,`The restart waits for the welcome pause (${untilRestart.toFixed(1)}s)`);
+ const [continued]=await page.evaluate(()=>window.__openingSnapshots);
+ assert.ok(continued.hold,`The restarted page holds the pause while the archive streams in`);
+ assert.ok(continued.bootTime>=13.6,`The opening continues from its pause (${continued.bootTime})`);
+ await ready();
  assert.ok((await releases()).includes(`${metadata.version}-test-3`),'The opening applies the waiting release');
- report.checks.push('replaying the opening applies the waiting release without a manual restart');
- revision=4;fail=true;
+ report.checks.push('replaying the opening applies the waiting release in its welcome pause and continues from there');
+ const base='http://127.0.0.1:5191/';
+ revision=4;
+ await page.goto(base);await ready();
  await page.evaluate(async()=>{const r=await navigator.serviceWorker.getRegistration();await r.update()});
+ await page.waitForFunction(async()=>Boolean((await navigator.serviceWorker.getRegistration())?.waiting),null,{timeout:90000});
+ const skipped=Date.now();
+ const skipApply=page.waitForNavigation({waitUntil:'load',timeout:90000});
+ skipApply.catch(()=>{});
+ await page.locator('#skip').click();
+ await skipApply;
+ const untilSkipRestart=(Date.now()-skipped)/1000;
+ assert.ok(untilSkipRestart<12,`The skip applies the release where the opening was left (${untilSkipRestart.toFixed(1)}s)`);
+ assert.equal(new URL(page.url()).search,'','The restarted terminal keeps the plain entry');
+ await ready();
+ assert.equal((await stats(page)).mode,'archive','The skipped opening opens the new release array');
+ assert.ok((await releases()).includes(`${metadata.version}-test-4`),'The skip applies the waiting release');
+ report.checks.push('skipping the opening applies the waiting release and opens its array');
+ await page.goto(base);
+ await page.waitForFunction(()=>window.readSnapshot().bootTime>15,null,{timeout:90000});
+ revision=5;
+ await page.evaluate(async()=>{const r=await navigator.serviceWorker.getRegistration();await r.update()});
+ await page.waitForFunction(async()=>Boolean((await navigator.serviceWorker.getRegistration())?.waiting),null,{timeout:90000});
+ const handedOver=page.waitForNavigation({waitUntil:'load',timeout:90000});
+ handedOver.catch(()=>{});
+ await handedOver;
+ await ready();
+ assert.equal((await stats(page)).mode,'detail','The finished opening hands over to the detail view of the new release');
+ assert.ok((await releases()).includes(`${metadata.version}-test-5`),'The opening end applies the waiting release');
+ report.checks.push('the opening end applies a release that finished after its pause');
+ revision=6;fail=true;
+ await page.evaluate(()=>{window.__release='still-running'});
+ await page.evaluate(async()=>{const r=await navigator.serviceWorker.getRegistration();await r.update()});
+ await page.waitForFunction(async()=>Boolean((await navigator.serviceWorker.getRegistration())?.installing),null,{timeout:90000});
  await page.waitForFunction(async()=>{const r=await navigator.serviceWorker.getRegistration();return !r.installing&&!r.waiting},null,{timeout:90000});
+ assert.equal(await page.evaluate(()=>window.__release),'still-running','A release that cannot be installed never restarts the terminal');
  await context.setOffline(true);await page.reload();await ready();
- assert.ok((await releases()).includes(`${metadata.version}-test-3`));
- assert.ok(!(await releases()).includes(`${metadata.version}-test-4`));
+ assert.ok((await releases()).includes(`${metadata.version}-test-5`),'The previous complete release serves the offline reload');
  report.checks.push('failed update leaves the previous complete offline release usable');
  assert.deepEqual(errors,[]);console.log(JSON.stringify(report,null,2));
 }finally{await writeFile('.tools/responsive/pwa-report.json',JSON.stringify(report,null,2));await browser.close();await new Promise(r=>server.close(r))}

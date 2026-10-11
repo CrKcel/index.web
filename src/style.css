@@ -157,7 +157,7 @@ button {
 .powered {
   position: absolute;
   right: 59px;
-  bottom: 48px;
+  bottom: 33px;
   font-size: 18px;
   z-index: 5;
   display: flex;
@@ -482,11 +482,6 @@ button {
     opacity 0.7s 0.4s,
     transform 0.7s 0.4s;
 }
-.file-summary > span:last-child {
-  font-size: 11px;
-  letter-spacing: 1px;
-  color: #666257;
-}
 .read-file {
   display: flex;
   align-items: center;
@@ -534,7 +529,7 @@ button {
 }
 .archive-navigation {
   position: absolute;
-  left: 504px;
+  left: 409px;
   bottom: 71px;
   display: flex;
   align-items: center;
@@ -1871,8 +1866,7 @@ button {
 #selected-title,
 #column-name,
 #hover-title,
-#archive-category,
-#selected-clearance {
+#archive-category {
   flex: none;
   --rn-blur: 0.2;
   --rn-edge-fade: 0.08em;

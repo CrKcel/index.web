@@ -68,9 +68,9 @@ export class TerminalAudio {
   prepareMusic() {
     return this.music.prepare();
   }
-  restartBoot() {
+  restartBoot(from = BOOT_START) {
     this.stopEffects();
-    this.bootTime = BOOT_START;
+    this.bootTime = from;
     this.bootMix = -1;
   }
   private hide = () => {

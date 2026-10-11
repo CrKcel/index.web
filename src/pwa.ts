@@ -10,8 +10,17 @@ let ready = false, failed = false, started = false, pending = false;
 // The worker already handed over: the reload follows its activation, and a
 // later release can ask again.
 let applying: ServiceWorker | undefined;
+// The release the opening holds until its welcome pause, whether this load is
+// already the far side of such a restart, and where the handover in flight
+// sends the next load.
+let armed: ServiceWorker | undefined, continuing = false, restartTo: Restart | undefined;
 let tell: (message: string) => void = () => {};
 let inOpening: () => boolean = () => false;
+/** Where a restart out of the opening sends the next load: on the same welcome
+ *  card, in the array the reader asked for, or in the detail view the opening
+ *  was handing over to. */
+export type Restart = "opening" | "archive" | "detail";
+const RESTART_KEY = "rhine-restart";
 const installed = () => matchMedia("(display-mode: standalone)").matches ||
   Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
 
@@ -34,18 +43,80 @@ function refresh() {
 }
 
 /** Hand the waiting release to the worker, which activates it and reloads the
- *  page through `controllerchange`. Only the opening or a hidden tab reaches
- *  this point, so a session in use keeps the release it started with. */
-function applyWorker(worker: ServiceWorker) {
-  if (applying === worker || (!document.hidden && !inOpening())) return;
+ *  page through `controllerchange`, which continues at `restart`. */
+function applyWorker(worker: ServiceWorker, restart?: Restart) {
+  if (applying === worker || (!document.hidden && !inOpening())) return false;
   applying = worker;
+  restartTo = restart;
   worker.postMessage({ type: "RHINE_APPLY_UPDATE" });
+  return true;
+}
+
+/** Offer a finished release at an apply moment. A hidden tab restarts at once,
+ *  because its opening is not on screen; the opening instead arms the release
+ *  until its welcome pause, where the restart interrupts nothing. A session in
+ *  use keeps the release it started with. */
+function offerWorker(worker: ServiceWorker) {
+  if (document.hidden) applyWorker(worker);
+  else if (inOpening() && !continuing) armed = worker;
 }
 
 /** Called when the terminal re-enters its opening, which is an apply moment. */
 export function applyPendingUpdate() {
   const worker = registration?.waiting;
-  if (pending && worker) applyWorker(worker);
+  if (pending && worker) offerWorker(worker);
+}
+
+/** Called from the opening once its clock reaches the welcome pause. The next
+ *  load continues the opening from that reading instead of restarting it. */
+export function applyOpeningUpdate() {
+  const worker = armed;
+  armed = undefined;
+  // The opening that this load continued is past its pause now, so a later
+  // release may be armed for the next one.
+  continuing = false;
+  if (worker) applyWorker(worker, "opening");
+}
+
+/** Called when the opening leaves the screen without reaching its pause, which
+ *  is what the entry button and the handover to the detail view both do. A
+ *  finished release applies here and the next load opens at `destination`, so
+ *  leaving the opening early never strands the reader in the release that is
+ *  waiting. Returns whether that restart takes the terminal over. */
+export function applyLeavingOpening(destination: "archive" | "detail") {
+  const worker = armed ?? (pending ? registration?.waiting : undefined);
+  armed = undefined;
+  continuing = false;
+  if (!worker) return false;
+  return applyWorker(worker, destination);
+}
+
+/** Called once per load. Reports where a restart out of the opening left the
+ *  reader, or null when this load opens on its own. */
+export function consumeRestart(): Restart | null {
+  let restart: Restart | null = null;
+  try {
+    const value = sessionStorage.getItem(RESTART_KEY);
+    if (value !== null) sessionStorage.removeItem(RESTART_KEY);
+    if (value === "opening" || value === "archive" || value === "detail") restart = value;
+  } catch { /* Storage can be unavailable; the opening then restarts. */ }
+  continuing = restart === "opening";
+  return restart;
+}
+
+/** Adopt what the origin already has, without a network check, so a release an
+ *  earlier session finished installing is known before the opening can be left.
+ *  The installation itself stays out of the archive download's way. */
+export function adoptWaitingRelease(opening: () => boolean) {
+  inOpening = opening;
+  if (started || !import.meta.env.PROD || !window.isSecureContext || !("serviceWorker" in navigator)) return;
+  void navigator.serviceWorker.getRegistration(import.meta.env.BASE_URL).then(found => {
+    if (started || !found) return;
+    registration ??= found;
+    pending = pending || Boolean(found.waiting && navigator.serviceWorker.controller);
+    refresh();
+    applyPendingUpdate();
+  }).catch(() => {});
 }
 
 export async function initPwa(notify: (message: string) => void, opening: () => boolean) {
@@ -67,7 +138,7 @@ export async function initPwa(notify: (message: string) => void, opening: () => 
           // to be handed over by the page.
           pending = Boolean(navigator.serviceWorker.controller);
           refresh();
-          if (pending) applyWorker(worker);
+          if (pending) offerWorker(worker);
         } else if (worker.state === "redundant" && !registration?.active) {
           failed = true; refresh();
         }
@@ -87,8 +158,11 @@ export async function initPwa(notify: (message: string) => void, opening: () => 
 }
 
 if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("controllerchange", () => {
-  if (applying) location.reload();
-  else refresh();
+  if (!applying) { refresh(); return; }
+  // The next load continues where the restart landed: the same welcome card,
+  // the array, or the detail view.
+  if (restartTo) try { sessionStorage.setItem(RESTART_KEY, restartTo); } catch { /* The opening restarts. */ }
+  location.reload();
 });
 document.addEventListener("visibilitychange", applyPendingUpdate);
 document.addEventListener("click", async event => {

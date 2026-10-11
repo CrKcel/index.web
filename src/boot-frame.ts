@@ -23,6 +23,12 @@ export const INSPECTION = 21.42;
 /** The opening hands the terminal to the detail view. */
 export const OPENING_END = 28.12;
 
+export const WELCOME_HOLD = 13.72;
+export const WELCOME_FLASH = 14.28;
+
+export const isWelcomePause = (t: number) =>
+  t >= WELCOME_HOLD && t < WELCOME_FLASH;
+
 /** The stage's opening step, whichever came last. */
 export function bootStep(t: number, motionStep: string): string {
   if (t >= INSPECTION) return "inspect";

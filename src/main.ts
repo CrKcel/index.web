@@ -5,7 +5,15 @@ import "./decryption.css";
 import "@kitlangton/rolling-number/styles.css";
 import "./style.css";
 import "./responsive.css";
-import { applyPendingUpdate, initPwa } from "./pwa";
+import {
+  adoptWaitingRelease,
+  applyLeavingOpening,
+  applyOpeningUpdate,
+  applyPendingUpdate,
+  consumeRestart,
+  initPwa,
+  type Restart,
+} from "./pwa";
 import { ArchiveScene } from "./scene";
 import { ModelViewer } from "./model-viewer";
 import { ContentTransition, SurfaceTransition } from "./ui-transitions";
@@ -43,6 +51,8 @@ import {
   bootRuleScale,
   bootStep,
   bootTitle,
+  isWelcomePause,
+  WELCOME_HOLD,
 } from "./boot-frame";
 import {
   detailMarkup,
@@ -110,16 +120,15 @@ const {
   columnTitle,
   hoverTitle,
   categoryTitle,
-  clearanceTitle,
   rollingTitles,
 } = createArchiveWidgets();
 const audio = new TerminalAudio();
 let musicSuppressed = false;
 function configureAudio() { audio.configure({ ...prefs, music: prefs.music && !musicSuppressed }); }
 configureAudio();
-// The opening holds on its composed welcome card until the archive exists.
-const WELCOME_HOLD = 13.72;
 let bootHeld = false;
+let resumedOpening = false;
+let openingRestart: Restart | null = null;
 let scene: ArchiveScene | undefined;
 let viewer: ModelViewer | undefined;
 const accessLog: { id: string; time: string }[] = [];
@@ -176,6 +185,7 @@ const fileTicks = [...$("#file-ticks").querySelectorAll<HTMLButtonElement>("butt
 
 function setMode(next: Mode) {
   const previousMode = mode;
+  if (previousMode === "boot" && next !== "boot" && applyLeavingOpening(next)) return;
   rollingTitles.forEach(title => title.update({ animated: next === "archive" }));
   if (next !== "archive") {
     rollingTitles.forEach(title => title.finish());
@@ -248,7 +258,6 @@ function updateSelection(navigation?: ArchiveNavigation) {
   const { lane } = fileLocation(selected);
   const files = columnFiles(lane);
   selectionTitle.update({ text: r.title, animated: mode === "archive" });
-  clearanceTitle.update({ text: r.clearance, animated: mode === "archive" });
   categoryTitle.update({ text: r.category, animated: mode === "archive" });
   const direction =
     navigation && "axis" in navigation
@@ -552,7 +561,7 @@ function setBootHold(held: boolean) {
  *  of the opening resumes from there once the scene is ready. */
 function bootClock(time: number) {
   const elapsed = time - bootStart;
-  if (ready || elapsed <= WELCOME_HOLD) {
+  if (ready || elapsed < WELCOME_HOLD) {
     setBootHold(false);
     return elapsed;
   }
@@ -562,6 +571,9 @@ function bootClock(time: number) {
 }
 
 function bootFrame(t: number) {
+  // A downloaded release restarts the terminal on the composed welcome card,
+  // so the reload lands in the pause and the next load carries the opening on.
+  if (isWelcomePause(t)) applyOpeningUpdate();
   audio.updateBoot(t, bootHeld);
   const step = bootStep(t, bootSequence.update(t).step);
   if (step !== lastStep) {
@@ -604,6 +616,12 @@ let frameCount = 0,
 function frame(ms: number) {
   if (document.hidden) { requestAnimationFrame(frame); return; }
   const time = ms / 1000;
+  // The first frame anchors a resumed opening: an rAF stamp can precede the
+  // load's own reading, and the pause has to pin from that frame on.
+  if (resumedOpening) {
+    resumedOpening = false;
+    bootStart = time - WELCOME_HOLD;
+  }
   const theme = scene?.themeAmount ?? (darkTheme() ? 1 : 0);
   paintTheme(theme);
   viewer?.setTheme(theme);
@@ -679,8 +697,10 @@ async function start() {
     select(0);
     // The `?scene=` shortcuts hand the terminal straight to their mode; the
     // normal path only leaves the opening when the reader asks for the array.
-    if (sceneParams.get("scene") === "archive") setMode("archive");
-    if (sceneParams.get("scene") === "detail") setMode("detail");
+    // A restart that landed in one of those views continues there.
+    const shortcut = sceneParams.get("scene");
+    if (shortcut === "archive" || openingRestart === "archive") setMode("archive");
+    if (shortcut === "detail" || openingRestart === "detail") setMode("detail");
   } catch (error) {
     console.error(error);
     setBootHold(false);
@@ -688,16 +708,25 @@ async function start() {
   } finally {
     // Do not compete with the archive download the opening is waiting on. The
     // full offline installation starts once the terminal has its resources.
-    setTimeout(() => void initPwa(notify, () => mode === "boot"), 1500);
+    setTimeout(() => void initPwa(notify, inOpening), 1500);
   }
 }
 updateSelection();
 // The page opens itself: the calibrated opening starts on the first frame while
 // the archive model and the score stream in behind it. Nothing here waits for
 // audio, and the opening clock only waits for the scene.
-bootStart = performance.now() / 1000 - BOOT_START;
-audio.restartBoot();
+// A load that follows a restart out of the opening continues where the reader
+// was: on the same welcome card, or already in the array or the detail view.
+openingRestart = consumeRestart();
+resumedOpening = openingRestart === "opening";
+const openingStart = resumedOpening ? WELCOME_HOLD : BOOT_START;
+bootStart = performance.now() / 1000 - openingStart;
+audio.restartBoot(openingStart);
+const inOpening = () => mode === "boot";
 setMode("boot");
+// Adopting what the origin already has takes no network check, so a release an
+// earlier session left waiting is known before the opening can be left.
+adoptWaitingRelease(inOpening);
 $("#boot-error").querySelector("button")!.addEventListener("click", () => location.reload());
 if (prefs.music) void audio.prepareMusic().catch(() => { /* Playback retries on the next activation. */ });
 requestAnimationFrame(frame);

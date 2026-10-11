@@ -48,11 +48,7 @@ export function createArchiveWidgets() {
     ...textOptions,
     text: $("#archive-category").textContent ?? "",
   });
-  const clearanceTitle = createRollingText($("#selected-clearance"), {
-    ...textOptions,
-    text: $("#selected-clearance").textContent ?? "",
-  });
-  const rollingTitles = [selectionTitle, columnTitle, hoverTitle, categoryTitle, clearanceTitle];
+  const rollingTitles = [selectionTitle, columnTitle, hoverTitle, categoryTitle];
   const selectedCode = createRollingNumber($("#selected-code"), codeOptions);
   const hoverCode = createRollingNumber($("#hover-code"), codeOptions);
   return {
@@ -64,7 +60,6 @@ export function createArchiveWidgets() {
     columnTitle,
     hoverTitle,
     categoryTitle,
-    clearanceTitle,
     rollingTitles,
   };
 }
