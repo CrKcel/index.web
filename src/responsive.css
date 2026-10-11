@@ -148,6 +148,10 @@
 :is([data-layout="compact"], [data-layout="portrait"]) .result-name > b { font-size: 12px; flex-basis: 48px; }
 :is([data-layout="compact"], [data-layout="portrait"]) .search-results { height: auto; overflow: visible; }
 :is([data-layout="compact"], [data-layout="portrait"]) .modal-bottom { position: static; margin-top: 22px; gap: 12px; font-size: 8px; flex-wrap: wrap; }
+:is([data-layout="compact"], [data-layout="portrait"]) .settings-footer { margin-top: 22px; padding-top: 18px; gap: 14px; }
+:is([data-layout="compact"], [data-layout="portrait"]) .settings-actions { flex-wrap: wrap; gap: 16px; }
+:is([data-layout="compact"], [data-layout="portrait"]) .settings-actions button { min-height: 44px; }
+:is([data-layout="compact"], [data-layout="portrait"]) .settings-meta { font-size: 8px; flex-wrap: wrap; gap: 8px 12px; }
 :is([data-layout="compact"], [data-layout="portrait"]) .audio-settings { grid-template-columns: 1fr; gap: 0; }
 :is([data-layout="compact"], [data-layout="portrait"]) .settings-list label { gap: 16px; }
 :is([data-layout="compact"], [data-layout="portrait"]) .toggle { flex-shrink: 0; }

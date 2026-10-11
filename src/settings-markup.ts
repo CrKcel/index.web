@@ -15,5 +15,6 @@ export type SettingsPreferences = {
 };
 
 export function settingsMarkup(prefs: SettingsPreferences) {
-  return `<h2>SYSTEM SETTINGS<small>终端偏好设置</small></h2><p class="settings-intro">JOYCE MOORE <span>·</span> SESSION AUTHORIZED</p><div class="settings-list">${themeSettingsMarkup(prefs.colorTheme)}${audioSettingsMarkup(prefs)}</div>${pwaSettingsMarkup()}<div class="settings-bottom">${document.fullscreenEnabled ? '<button data-action="fullscreen">FULLSCREEN <span>↗</span></button>' : ''}<button data-action="restart">REINITIALIZE SYSTEM <span>↻</span></button></div><div class="modal-bottom"><span>ANALYSIS OS / 1.0</span><span>POWERED BY RHINE LAB</span></div>`;
+  const fullscreen = document.fullscreenEnabled ? '<button data-action="fullscreen">FULLSCREEN <span>↗</span></button>' : "";
+  return `<h2>SYSTEM SETTINGS<small>终端偏好设置</small></h2><p class="settings-intro">JOYCE MOORE <span>·</span> SESSION AUTHORIZED</p><div class="settings-list">${themeSettingsMarkup(prefs.colorTheme)}${audioSettingsMarkup(prefs)}</div>${pwaSettingsMarkup()}<footer class="settings-footer"><div class="settings-actions">${fullscreen}<button data-action="restart">REINITIALIZE SYSTEM <span>↻</span></button></div><div class="settings-meta"><span>ANALYSIS OS / 1.0</span><span>POWERED BY RHINE LAB</span></div></footer>`;
 }
