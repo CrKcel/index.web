@@ -24,7 +24,8 @@ window.addEventListener("appinstalled", () => { installPrompt = undefined; refre
 matchMedia("(display-mode: standalone)").addEventListener("change", refresh);
 
 export function pwaSettingsMarkup() {
-  return `<section id="pwa-settings" class="pwa-settings" aria-label="主屏幕与离线使用"><h3>APP / 主屏幕与离线</h3><div class="pwa-actions">${installPrompt && !installed() ? '<button data-pwa-action="install">安装到设备 ↗</button>' : ""}${failed ? '<button data-pwa-action="retry">重试保存离线资源 ↻</button>' : ""}</div></section>`;
+  const actions = `${installPrompt && !installed() ? '<button data-pwa-action="install">安装到设备 ↗</button>' : ""}${failed ? '<button data-pwa-action="retry">重试保存离线资源 ↻</button>' : ""}`;
+  return `<section id="pwa-settings" class="pwa-settings" aria-label="主屏幕与离线使用"${actions ? "" : " hidden"}><h3>APP / 主屏幕与离线</h3><div class="pwa-actions">${actions}</div></section>`;
 }
 function refresh() {
   const current = document.querySelector("#pwa-settings");
