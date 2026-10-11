@@ -102,7 +102,6 @@ matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
   else paintTheme(darkTheme() ? 1 : 0);
 });
 const {
-  updateFooterClock,
   fileCounter,
   columnCounter,
   selectedCode,
@@ -144,7 +143,6 @@ function savePrefs() {
   columnCounter.update({ animated: mode === "archive" });
   selectedCode.update({ animated: mode === "archive" });
   hoverCode.update({ animated: mode === "archive" });
-  updateFooterClock(new Date());
 }
 function fit() {
   fitLayout({
@@ -197,7 +195,6 @@ function setMode(next: Mode) {
   $("#archive-ui").inert = next !== "archive" || Boolean(modal);
   $("#archive-ui").setAttribute("aria-hidden", String(next !== "archive" || Boolean(modal)));
   $(".system-nav").inert = next === "boot" || Boolean(modal);
-  $(".system-footer").inert = next === "boot" || Boolean(modal);
   if (next === "detail") {
     if (previousMode !== "detail") detailTransition.show();
   } else if (previousMode === "detail" || (next === "boot" && !$("#detail-ui").hidden)) {
@@ -601,8 +598,7 @@ function publishSnapshot() {
   });
 }
 
-let lastTime = 0,
-  frameCount = 0,
+let frameCount = 0,
   frameStart = performance.now(),
   fps = 0;
 function frame(ms: number) {
@@ -630,10 +626,6 @@ function frame(ms: number) {
   const currentScene = scene;
   if (currentScene) inspectionOverlay.render(currentScene.decryptionFrame,
     (x, y) => currentScene.projectCard(x, y), Boolean(cinema));
-  if (Math.floor(time) !== lastTime) {
-    lastTime = Math.floor(time);
-    updateFooterClock(new Date());
-  }
   frameCount++;
   if (ms - frameStart > 1000) {
     fps = (frameCount * 1000) / (ms - frameStart);

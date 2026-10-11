@@ -157,7 +157,7 @@ button {
 .powered {
   position: absolute;
   right: 59px;
-  bottom: 108px;
+  bottom: 48px;
   font-size: 18px;
   z-index: 5;
   display: flex;
@@ -507,7 +507,7 @@ button {
 }
 .archive-counter {
   position: absolute;
-  bottom: 115px;
+  bottom: 55px;
   left: 60px;
 }
 .tiny-label {
@@ -535,7 +535,7 @@ button {
 .archive-navigation {
   position: absolute;
   left: 504px;
-  bottom: 131px;
+  bottom: 71px;
   display: flex;
   align-items: center;
   gap: 33px;
@@ -552,7 +552,7 @@ button {
 .column-navigation {
   position: absolute;
   left: 1005px;
-  bottom: 131px;
+  bottom: 71px;
   display: none;
   align-items: center;
   gap: 24px;
@@ -633,46 +633,6 @@ button {
   font-size: 13px;
   color: #6f675b;
   letter-spacing: 1px;
-}
-.system-footer {
-  position: absolute;
-  bottom: 35px;
-  left: 59px;
-  right: 59px;
-  font-size: 10px;
-  letter-spacing: 0.9px;
-  display: flex;
-  gap: 44px;
-  color: #78776e;
-  z-index: 5;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.8s;
-}
-.system-footer > span {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.status-light {
-  width: 5px;
-  height: 5px;
-  background: #777b60;
-  display: inline-block;
-}
-.system-footer > span:nth-child(2) {
-  margin-left: auto;
-}
-.system-footer i {
-  font-style: normal;
-  margin: 0 5px;
-}
-.system-footer button {
-  font-size: 10px;
-  letter-spacing: 1px;
-}
-.system-footer button:hover {
-  color: #111;
 }
 .detail-ui {
   position: absolute;
@@ -1395,8 +1355,7 @@ button {
 }
 
 /* Reference sequence: each stage uses the same physical scene and DOM. */
-[data-mode="boot"] .system-nav,
-[data-mode="boot"] .system-footer {
+[data-mode="boot"] .system-nav {
   opacity: 0;
   pointer-events: none;
 }
@@ -1470,9 +1429,7 @@ button {
   opacity: 0;
 }
 [data-mode="archive"] .system-nav,
-[data-mode="detail"] .system-nav,
-[data-mode="archive"] .system-footer,
-[data-mode="detail"] .system-footer {
+[data-mode="detail"] .system-nav {
   opacity: 1;
   pointer-events: auto;
 }
@@ -1502,9 +1459,6 @@ button {
 }
 [data-mode="archive"] .callout-rule i {
   opacity: 1;
-}
-[data-mode="detail"] .powered {
-  bottom: 108px;
 }
 [data-mode="detail"] .archive-ui {
   opacity: 0;

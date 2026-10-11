@@ -30,7 +30,7 @@
 
 [data-dark-surface="true"] { color-scheme: dark; color: var(--theme-ink); background: var(--theme-paper); }
 [data-dark-surface="true"] :is(#viewport, #stage, .model-viewer, .boot-white) { background: var(--theme-paper); color: var(--theme-ink); }
-[data-dark-surface="true"] :is(.brand, .powered, .system-nav, .system-footer, .archive-ui, .detail-ui, .terminal-modal) { color: var(--theme-ink); }
+[data-dark-surface="true"] :is(.brand, .powered, .system-nav, .archive-ui, .detail-ui, .terminal-modal) { color: var(--theme-ink); }
 [data-dark-surface="true"] .scene-atmosphere { background: linear-gradient(180deg, var(--theme-paper), rgba(var(--theme-paper-rgb), .82) 11%, transparent 40%), linear-gradient(0deg, rgba(var(--theme-paper-rgb), .94), transparent 19%), radial-gradient(ellipse at 48% 48%, transparent 35%, rgba(var(--theme-paper-rgb), .38) 85%); }
 [data-dark-surface="true"] .boot-background { background: radial-gradient(ellipse at 51% 48%, var(--theme-panel), var(--theme-paper) 76%); }
 [data-dark-surface="true"] :is(.terminal-modal, .viewer-loading, .toast) { background: var(--theme-panel); color: var(--theme-ink); box-shadow: 0 26px 95px #0003; border-color: var(--theme-line); }
@@ -40,8 +40,7 @@
 [data-dark-surface="true"] a { color: var(--theme-accent); }
 [data-dark-surface="true"] :is(.theme-settings, .theme-choices button, .modal-top, .settings-list label, .settings-footer, .detail-tabs, .result-header, .result-row, .viewer-parts p, .viewer-footer, .viewer-surface button, .category-filters button) { border-color: var(--theme-line); }
 [data-dark-surface="true"] :is(.callout-rule, .file-ticks button::before) { background: var(--theme-line); }
-[data-dark-surface="true"] :is(.powered i, .tab-indicator, .status-light) { background: var(--theme-ink); }
-[data-dark-surface="true"] .system-footer button:hover { color: var(--theme-accent); }
+[data-dark-surface="true"] :is(.powered i, .tab-indicator) { background: var(--theme-ink); }
 [data-dark-surface="true"] :is(.theme-choices button[aria-pressed="true"], .category-filters button.active, .viewer-surface button[aria-pressed="true"], .viewer-actions button[aria-pressed="true"]) { background: var(--theme-ink); color: var(--theme-paper); border-color: var(--theme-ink); }
 [data-dark-surface="true"] :is(input, select) { color: var(--theme-ink); accent-color: var(--theme-accent); }
 [data-dark-surface="true"] input::placeholder { color: var(--theme-muted); }

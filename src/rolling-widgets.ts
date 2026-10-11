@@ -1,7 +1,6 @@
 // The rolling number and text widgets of the archive view.
 //
 // Construction lives here so the page only has to push new values.
-import { createRollingClock } from "./rolling-clock";
 import { createRollingNumber, createRollingText } from "@kitlangton/rolling-number";
 
 const $ = <T extends HTMLElement = HTMLElement>(selector: string) =>
@@ -13,7 +12,6 @@ export function createArchiveWidgets() {
     motionBlur: true,
     animated: true,
   };
-  const updateFooterClock = createRollingClock($("#clock"));
   const numberOptions = {
     ...rollingMotion,
     locales: "en-US",
@@ -58,7 +56,6 @@ export function createArchiveWidgets() {
   const selectedCode = createRollingNumber($("#selected-code"), codeOptions);
   const hoverCode = createRollingNumber($("#hover-code"), codeOptions);
   return {
-    updateFooterClock,
     fileCounter,
     columnCounter,
     selectedCode,

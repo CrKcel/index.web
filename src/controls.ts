@@ -135,7 +135,7 @@ export function bindControls(host: ControlsHost) {
     if (action === "close-modal") host.closeModal();
     if (action === "bookmark") host.toggleSaved();
     if (action === "reset-search") host.resetSearch();
-    if (action === "replay" || action === "restart") host.replayBoot();
+    if (action === "restart") host.replayBoot();
     if (action === "fullscreen" && document.fullscreenEnabled) {
       if (document.fullscreenElement) void document.exitFullscreen();
       else

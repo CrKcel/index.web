@@ -84,13 +84,13 @@ try{
  assert.equal(keys.filter(k=>k.startsWith('rhine-lab:')).length,1);
  assert.ok(keys.some(k=>k.endsWith('-test-2')));
  report.checks.push('a hidden terminal applies the waiting release, cleans the old cache and keeps preferences/bookmarks');
- // Replaying the opening is the second apply moment.
  await page.waitForFunction(()=>window.readSnapshot().mode==='archive',null,{timeout:90000});
  revision=3;
  await page.evaluate(async()=>{const r=await navigator.serviceWorker.getRegistration();await r.update()});
  await page.waitForFunction(async()=>Boolean((await navigator.serviceWorker.getRegistration())?.waiting),null,{timeout:90000});
  const openingApply=page.waitForNavigation({waitUntil:'load',timeout:90000});
- await page.locator('[data-action="replay"]').click();
+ await page.locator('[data-action="settings"]').click();
+ await page.locator('[data-action="restart"]').click();
  await openingApply;await ready();
  assert.ok((await releases()).includes(`${metadata.version}-test-3`),'The opening applies the waiting release');
  report.checks.push('replaying the opening applies the waiting release without a manual restart');
