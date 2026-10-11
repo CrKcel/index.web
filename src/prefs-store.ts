@@ -4,7 +4,6 @@
 // page only has to hold the live object and the settings markup only has to
 // read it.
 import { isColorTheme, type ColorTheme } from "./color-theme";
-import { normalizeQuality, type RenderQuality } from "./render-quality";
 
 export const SAVED_KEY = "rhine-saved";
 export const SETTINGS_KEY = "rhine-settings";
@@ -14,8 +13,6 @@ export type TerminalPreferences = {
   music: boolean;
   soundVolume: number;
   musicVolume: number;
-  quality: boolean;
-  rendering: RenderQuality;
   colorTheme: ColorTheme;
 };
 
@@ -25,8 +22,6 @@ type StoredPreferences = Partial<{
   music: boolean;
   soundVolume: number;
   musicVolume: number;
-  quality: boolean;
-  rendering: RenderQuality;
   colorTheme: ColorTheme;
 }>;
 
@@ -60,8 +55,6 @@ export function loadPreferences(): TerminalPreferences {
     music: stored.music ?? stored.sound ?? true,
     soundVolume: stored.soundVolume ?? .55,
     musicVolume: stored.musicVolume ?? .5,
-    quality: stored.quality ?? true,
-    rendering: normalizeQuality(stored.rendering, stored.quality !== false),
     colorTheme: isColorTheme(stored.colorTheme) ? stored.colorTheme : "system",
   };
 }

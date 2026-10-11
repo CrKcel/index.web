@@ -2,11 +2,8 @@ import { InspectionOverlay } from "./inspection-overlay";
 import { DocumentDecryption } from "./document-decryption";
 import "./document-decryption.css";
 import "./decryption.css";
-import { normalizeQuality, qualityPresets, type QualityPreset, type RenderQuality } from "./render-quality";
-import { syncQualityUI } from "./quality-settings";
 import "@kitlangton/rolling-number/styles.css";
 import "./style.css";
-import "./quality-settings.css";
 import "./responsive.css";
 import { initPwa } from "./pwa";
 import { ArchiveScene } from "./scene";
@@ -142,9 +139,6 @@ function savePrefs() {
   saveAudioPrefs();
   scene?.setTheme(darkTheme());
   document.querySelectorAll<HTMLElement>("[data-color-theme]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.colorTheme === prefs.colorTheme)));
-  scene?.setQuality(prefs.rendering);
-  viewer?.setQuality(prefs.rendering);
-  syncQualityUI(prefs.rendering);
   fileCounter.update({ animated: mode === "archive" });
   rollingTitles.forEach(title => title.update({ animated: mode === "archive" }));
   columnCounter.update({ animated: mode === "archive" });
@@ -508,20 +502,10 @@ const controlsHost: ControlsHost = {
     if (isColorTheme(theme)) prefs.colorTheme = theme;
     savePrefs();
   },
-  setQualityPreset: (value) => {
-    if (!Object.hasOwn(qualityPresets, value)) return;
-    prefs.rendering = { ...qualityPresets[value as QualityPreset] };
-    savePrefs();
-  },
-  setQualityValue: (key, value) => {
-    const qualityKey = key as keyof RenderQuality;
-    prefs.rendering = normalizeQuality({ ...prefs.rendering, [qualityKey]: qualityKey === "antialias" ? value : Number(value) });
-    savePrefs();
-  },
   setToggle: (key, enabled) => {
-    if (key === "sound" || key === "music" || key === "quality") prefs[key] = enabled;
-    if (key === "sound" || key === "music") saveAudioPrefs();
-    else savePrefs();
+    if (key !== "sound" && key !== "music") return;
+    prefs[key] = enabled;
+    saveAudioPrefs();
   },
   setVolume: (key, value) => {
     prefs[key] = value;
@@ -540,7 +524,6 @@ const controlsHost: ControlsHost = {
     opener.focus({ preventScroll: true });
     viewer ??= new ModelViewer($("#stage"), () => { audio.setScene(mode); audio.play("page-close"); }, (sound) => audio.play(sound === "tick" ? "ui-tick" : sound));
     audio.setScene("viewer");
-    viewer.setQuality(prefs.rendering);
     scene.finishDecryption();
     viewer.open(
       records[selected].id,

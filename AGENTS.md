@@ -18,13 +18,13 @@
 | [`src/archive-camera.ts`](src/archive-camera.ts) | 相机取景与开场运镜（纯函数，标定端点见 `docs/DESIGN.md`） |
 | [`src/archive-field.ts`](src/archive-field.ts) | 阵列表面波场：驻波、呼吸、选中涟漪与配乐位移 |
 | [`src/archive-pointer.ts`](src/archive-pointer.ts) | 指针、滚轮与拖拽手势、惯性交接与悬停采样 |
-| [`src/archive-render.ts`](src/archive-render.ts) | 合成通道链、画质开关与帧去重 |
+| [`src/archive-render.ts`](src/archive-render.ts) | 合成通道链与帧去重 |
 | [`src/archive-cassette.ts`](src/archive-cassette.ts) | 模型装配、烘焙代理、标签画布与实例打包 |
 | [`src/model-viewer.ts`](src/model-viewer.ts) | 独立模型查看器与拆解动画 |
 | [`src/decryption.ts`](src/decryption.ts)、[`src/document-decryption.ts`](src/document-decryption.ts) | 模型解密轨迹与正文同步揭示 |
 | [`src/audio.ts`](src/audio.ts) | 音频设备生命周期、手势解锁、音效节流与开场提示调度 |
 | [`src/audio-synth.ts`](src/audio-synth.ts)、[`src/audio-music.ts`](src/audio-music.ts)、[`src/audio-types.ts`](src/audio-types.ts)、[`public/audio/`](public/audio/) | 交互音效合成、三轨配乐循环与声部比例、音效清单与音源记录 |
-| [`src/render-quality.ts`](src/render-quality.ts)、[`src/quality-renderer.ts`](src/quality-renderer.ts) | 画质预设与渲染管线 |
+| [`src/render-quality.ts`](src/render-quality.ts)、[`src/quality-renderer.ts`](src/quality-renderer.ts) | 渲染参数与渲染管线 |
 | [`content/archives.json`](content/archives.json) | 页面与下载共用的五类、40 份档案数据 |
 | [`src/data.ts`](src/data.ts) | 档案类型与阵列位置映射 |
 | [`public/assets/`](public/assets/) | 运行所需的 GLB 模型 |
@@ -53,7 +53,7 @@ Wrangler：`npx wrangler dev` 本地开发，`npx wrangler deploy` 部署，`npx
 
 ## 检查
 
-`npm run check` 覆盖内容规则、视口与取景、相机取景端点、表面波场、开场帧、字体栈一致性、运动与循环、拖拽与惯性、可见性覆盖、外观与解密、模型外壳与装配、画质上限、渲染去重、主题波、音效与配乐、PWA 重定向。清单在 `scripts/check.mjs`，也是唯一登记处：清单外的 `scripts/check-*.mjs` 会让运行器直接报错，新增检查必须登记；`scripts/check-browser.mjs` 与 `scripts/check-cloudflare-deployment.mjs` 是运行器，不参与清单校验。
+`npm run check` 覆盖内容规则、视口与取景、相机取景端点、表面波场、开场帧、字体栈一致性、运动与循环、拖拽与惯性、可见性覆盖、外观与解密、模型外壳与装配、渲染去重、主题波、音效与配乐、PWA 重定向。清单在 `scripts/check.mjs`，也是唯一登记处：清单外的 `scripts/check-*.mjs` 会让运行器直接报错，新增检查必须登记；`scripts/check-browser.mjs` 与 `scripts/check-cloudflare-deployment.mjs` 是运行器，不参与清单校验。
 
 这些脚本直接导入 `src/` 的 TypeScript 源码，而源码沿用 Vite 与 tsc 接受的无扩展名相对导入，因此需要预先加载 `scripts/type-import-loader.mjs` 才能在 Node 下解析（`scripts/check.mjs` 已代为加载）。浏览器检查通过页面每帧写在 `#stage[data-stats]` 上的只读 JSON 快照读数（读取入口见 `scripts/page-snapshot.mjs`），应用本身不暴露 JavaScript 评审接口。
 
@@ -84,7 +84,6 @@ Wrangler：`npx wrangler dev` 本地开发，`npx wrangler deploy` 部署，`npx
 - 1920×1080 为布局基准，等比例适应窗口；支持桌面不同比例、手机横竖屏与触摸操作，16:9 为视觉基准。
 - 界面使用系统 UI 字体栈。标定过的单行盒靠 `--font-base` + `--fit-width` + `--text-fit`（见 `src/text-fit.ts`）在更宽的平台字体下收缩字号，新增或改动这类盒子时必须补齐前两个变量，并保留开场授权环那种有意的大字距动画。
 
-## 画质与声音
+## 声音
 
-- 画质调整渲染精度与可选效果，默认采用原始预设，预设与参数见 `docs/DESIGN.md`。
 - 声音与音乐独立开关与音量；音源与处理记录见 `public/audio/typing-source.json` 与 `public/audio/score.json`。

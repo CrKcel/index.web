@@ -29,7 +29,6 @@ const offline = [
   "check-assembly.mjs",
   "check-decryption.mjs",
   "check-shell.mjs",
-  "check-quality.mjs",
   "check-render-updates.mjs",
   "check-theme.mjs",
   "check-audio.mjs",

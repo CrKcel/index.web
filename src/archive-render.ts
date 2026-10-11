@@ -1,6 +1,5 @@
-// The archive render graph: the composited pass chain, the quality knobs that
-// reshape it, and the frame-identity check that lets an unchanged image keep the
-// previous canvas contents.
+// The archive render graph: the composited pass chain and the frame-identity
+// check that lets an unchanged image keep the previous canvas contents.
 //
 // The scene keeps the renderer itself (picking, relay projection and the impostor
 // bake all read it) and the camera; everything that describes *how a frame is
@@ -9,12 +8,11 @@ import * as THREE from "three";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { SMAAPass } from "three/addons/postprocessing/SMAAPass.js";
 import type { LightingLook } from "./archive-lighting";
 import { applyTextureQuality, resizeQuality } from "./quality-renderer";
+import { renderQuality } from "./render-quality";
 import { RenderState } from "./render-state";
 import { SharedDepthAO, SharedDepthBokeh } from "./shared-depth";
-import type { RenderQuality } from "./render-quality";
 
 export type RenderGraphOptions = {
   container: HTMLElement;
@@ -50,13 +48,10 @@ export class ArchiveRenderGraph {
   private readonly composer: EffectComposer;
   private ao: SharedDepthAO;
   private readonly bokeh: SharedDepthBokeh;
-  private readonly smaa = new SMAAPass();
   private readonly renderState = new RenderState();
   private readonly shadowState = new RenderState();
   private renderedFrames = 0;
   private reusedFrames = 0;
-  private aoKernelSize = 32;
-  private appliedQuality = "";
   constructor(options: RenderGraphOptions) {
     this.container = options.container;
     this.renderer = options.renderer;
@@ -83,8 +78,17 @@ export class ArchiveRenderGraph {
       () => this.ao,
     );
     this.composer.addPass(this.bokeh);
-    this.smaa.enabled = false;
-    this.composer.addPass(this.smaa);
+    this.ao.enabled = renderQuality.aoSamples > 0;
+    this.bokeh.enabled = renderQuality.depthOfField > 0;
+    this.renderer.shadowMap.enabled = true;
+    const shadowSize = Math.min(
+      renderQuality.shadows,
+      this.renderer.capabilities.maxTextureSize,
+    );
+    this.light.shadow.map?.dispose();
+    this.light.shadow.map = null;
+    this.light.shadow.mapSize.set(shadowSize, shadowSize);
+    this.light.shadow.needsUpdate = true;
     this.composer.addPass(new OutputPass());
     // A lost context invalidates both snapshots: nothing may be reused.
     this.renderer.domElement.addEventListener(
@@ -101,73 +105,43 @@ export class ArchiveRenderGraph {
     this.shadowState.invalidate();
   }
   /** Depth-of-field inputs for the selected file at the current detail. */
-  focus(modelPosition: THREE.Vector3, detail: number, depthOfField: number) {
+  focus(modelPosition: THREE.Vector3, detail: number) {
     const focalPoint = modelPosition
       .clone()
       .add(new THREE.Vector3(0, 2, 0))
       .applyMatrix4(this.camera.matrixWorldInverse);
     return {
       focus: -focalPoint.z,
-      aperture: (THREE.MathUtils.lerp(0.0003, 0.0008, detail) * depthOfField) / 100,
+      aperture: (THREE.MathUtils.lerp(0.0003, 0.0008, detail) * renderQuality.depthOfField) / 100,
     };
   }
-  /** Returns false when this quality is already applied. */
-  applyQuality(quality: RenderQuality) {
-    const key = JSON.stringify(quality);
-    if (this.appliedQuality === key) return false;
-    this.appliedQuality = key;
-    if (quality.aoSamples && quality.aoSamples !== this.aoKernelSize) {
-      const old = this.ao;
-      this.ao = new SharedDepthAO(this.scene, this.camera, 1, 1, quality.aoSamples);
-      this.ao.kernelRadius = old.kernelRadius;
-      this.ao.minDistance = old.minDistance;
-      this.ao.maxDistance = old.maxDistance;
-      const index = this.composer.passes.indexOf(old);
-      this.composer.removePass(old);
-      this.composer.insertPass(this.ao, index);
-      old.dispose();
-      this.aoKernelSize = quality.aoSamples;
-    }
-    this.ao.enabled = quality.aoSamples > 0;
-    this.bokeh.enabled = quality.depthOfField > 0;
-    this.smaa.enabled = quality.antialias === "smaa";
-    this.renderer.shadowMap.enabled = quality.shadows > 0;
-    const size = Math.min(
-      quality.shadows || 1024,
-      this.renderer.capabilities.maxTextureSize,
-    );
-    if (this.light.shadow.mapSize.x !== size) {
-      this.light.shadow.map?.dispose();
-      this.light.shadow.map = null;
-      this.light.shadow.mapSize.set(size, size);
-    }
-    this.light.shadow.needsUpdate = true;
-    applyTextureQuality(this.scene, this.renderer, quality);
-    return true;
+  /** Raise the loaded textures to the authored filtering once the geometry exists. */
+  refreshTextures() {
+    applyTextureQuality(this.scene, this.renderer, renderQuality);
   }
-  /** Re-size the render targets for the current container and quality. */
-  resize(quality: RenderQuality) {
+  /** Re-size the render targets for the current container. */
+  resize() {
     this.renderState.invalidate();
     const dimensions = resizeQuality(
       this.renderer,
-      this.composer,
       this.container,
-      quality,
+      renderQuality,
+      this.composer,
     );
     this.ao.setSize(
-      Math.max(1, Math.floor(dimensions.width * quality.aoResolution)),
-      Math.max(1, Math.floor(dimensions.height * quality.aoResolution)),
+      Math.max(1, Math.floor(dimensions.width * renderQuality.aoResolution)),
+      Math.max(1, Math.floor(dimensions.height * renderQuality.aoResolution)),
     );
-    this.ao.setSharing(this.ao.enabled && this.bokeh.enabled && quality.aoResolution === 1);
+    this.ao.setSharing(this.ao.enabled && this.bokeh.enabled);
     this.container.dataset.renderQuality = JSON.stringify({
       ...JSON.parse(this.container.dataset.renderQuality!),
-      aoSamples: this.ao.enabled ? this.aoKernelSize : 0,
+      aoSamples: this.ao.enabled ? renderQuality.aoSamples : 0,
       aoWidth: this.ao.width,
       aoHeight: this.ao.height,
       shadows: this.renderer.shadowMap.enabled
         ? this.light.shadow.mapSize.x
         : 0,
-      depthOfField: this.bokeh.enabled ? quality.depthOfField : 0,
+      depthOfField: this.bokeh.enabled ? renderQuality.depthOfField : 0,
     });
   }
   /**

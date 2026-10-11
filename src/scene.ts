@@ -5,7 +5,7 @@ import { ThemeWave } from "./theme-motion";
 import { themeEnvironment } from "./theme-material";
 import { RhythmMotion, quietBands, type MusicBands, type RhythmStyle } from "./archive-play-motion";
 import { createArchiveLighting, type LightingLook } from "./archive-lighting";
-import { normalizeQuality, type RenderQuality } from "./render-quality";
+import { renderQuality } from "./render-quality";
 import { CardAppearance } from "./appearance";
 import { DecryptionController } from "./decryption";
 import { fileAtSlot, fileLocation } from "./data";
@@ -263,7 +263,6 @@ export class ArchiveScene {
   private light: THREE.DirectionalLight;
   private clock = 0;
   private loaded = false;
-  private quality = normalizeQuality(undefined);
   onSelect?: (index: number, cell?: ArchiveCell) => void;
   onHover?: (index: number | null) => void;
   onNavigate?: (axis: "row" | "lane", direction: number) => void;
@@ -351,8 +350,10 @@ export class ArchiveScene {
       const cell = poolCell(index);
       this.cells.push(cell);
     }
-    await this.cassette.load(assetUrl, this.quality, this.themeAmount);
+    await this.cassette.load(assetUrl, renderQuality, this.themeAmount);
     this.cassette.group.position.copy(this.cellPosition(poolCell(this.selectedSlot)));
+    this.render.refreshTextures();
+    this.resize();
     this.loaded = true;
   }
   /**
@@ -392,14 +393,6 @@ export class ArchiveScene {
       this.targetRotation = 0;
       if (this.rotation !== 0) this.returnY = this.cassette.group.position.y;
     } else this.returnY = null;
-  }
-  setQuality(value: RenderQuality | boolean) {
-    const quality =
-      typeof value === "boolean"
-        ? normalizeQuality(undefined, value)
-        : normalizeQuality(value);
-    this.quality = quality;
-    if (this.render.applyQuality(quality)) this.resize();
   }
   private cellPosition(cell: ArchiveCell) {
     return new THREE.Vector3(
@@ -515,7 +508,7 @@ export class ArchiveScene {
   resize() {
     const w = this.container.clientWidth,
       h = this.container.clientHeight;
-    this.render.resize(this.quality);
+    this.render.resize();
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
   }
@@ -971,7 +964,6 @@ export class ArchiveScene {
     const { focus, aperture } = this.render.focus(
       this.cassette.group.position,
       detail,
-      this.quality.depthOfField,
     );
     // A reused frame stops here: nothing after this changes the canvas.
     if (!this.render.render({

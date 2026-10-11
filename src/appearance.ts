@@ -7,7 +7,7 @@ type Surface = THREE.MeshPhysicalMaterial;
 type Palette = { high: Surface; low?: Surface };
 
 // The array and selected file share geometry. Morph their surface properties
-// on one mesh so transparent shells never overlap during a quality change.
+// on one mesh so transparent shells never overlap during a reveal transition.
 export class CardAppearance {
   private palettes = new Map<string, Palette>();
   disposeSources() {

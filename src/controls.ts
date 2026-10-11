@@ -2,9 +2,9 @@
 //
 // This module owns the four delegated listeners and the interaction routing --
 // settings controls, directory buttons, keyboard shortcuts and the modal focus
-// trap. What each action *means* (clamping a volume, normalising a quality
-// edit, persisting, applying to the scene) stays with the page, which receives
-// one call per intent through ControlsHost.
+// trap. What each action *means* (clamping a volume, persisting, applying to
+// the scene) stays with the page, which receives one call per intent through
+// ControlsHost.
 import type { Sound } from "./audio-types";
 
 export type ModalKind = "search" | "saved" | "settings";
@@ -34,8 +34,6 @@ export type ControlsHost = {
   setQuery(query: string): void;
   setFilter(filter: string): void;
   setColorTheme(theme: string): void;
-  setQualityPreset(value: string): void;
-  setQualityValue(key: string, value: string): void;
   setToggle(key: string, enabled: boolean): void;
   setVolume(key: "soundVolume" | "musicVolume", value: number): void;
   notify(message: string): void;
@@ -53,11 +51,6 @@ const $ = <T extends HTMLElement = HTMLElement>(selector: string) =>
 /** Registers the delegated listeners. Returns nothing; the page owns the DOM. */
 export function bindControls(host: ControlsHost) {
   document.addEventListener("input", (e) => {
-    const slider = e.target as HTMLInputElement;
-    if (slider.dataset.quality) {
-      const output = document.querySelector<HTMLOutputElement>(`[data-quality-output="${slider.dataset.quality}"]`);
-      if (output) output.value = `${slider.value}%`;
-    }
     const volume = e.target as HTMLInputElement;
     if (volume.dataset.volume === "musicVolume" || volume.dataset.volume === "soundVolume") {
       host.setVolume(volume.dataset.volume, Number(volume.value) / 100);
@@ -69,11 +62,6 @@ export function bindControls(host: ControlsHost) {
 
   document.addEventListener("change", (e) => {
     const el = e.target as HTMLInputElement;
-    if (el.id === "quality-preset") {
-      host.setQualityPreset(el.value);
-    } else if (el.dataset.quality) {
-      host.setQualityValue(el.dataset.quality, el.value);
-    }
     if (el.dataset.pref) {
       host.setToggle(el.dataset.pref, el.checked);
       host.play("confirm");

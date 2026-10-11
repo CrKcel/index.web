@@ -87,7 +87,7 @@ assert.ok(
   "Array handoff has the same surface",
 );
 
-// The quality value has to reach the compiled material.
+// The appearance reveal value has to reach the compiled material.
 const shader = {
   uniforms: {},
   vertexShader: "#include <begin_vertex>",

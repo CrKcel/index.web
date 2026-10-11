@@ -5,12 +5,8 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { createArchiveLighting } from "./archive-lighting";
 import { damp } from "./motion";
 import { ViewerCameraMotion } from "./viewer-camera";
-import { normalizeQuality, type RenderQuality } from "./render-quality";
-import {
-  applyTextureQuality,
-  createViewerPipeline,
-  resizeQuality,
-} from "./quality-renderer";
+import { renderQuality } from "./render-quality";
+import { applyTextureQuality, resizeQuality } from "./quality-renderer";
 
 const PARTS = [
   { id: "fasteners", label: "紧固件", en: "FASTENERS", depth: 2.75 },
@@ -33,20 +29,15 @@ export class ModelViewer {
   readonly root: HTMLElement;
   private canvasHost: HTMLElement;
   private renderer: THREE.WebGLRenderer;
-  private pipeline: ReturnType<typeof createViewerPipeline>;
-  private quality = normalizeQuality(undefined);
   dispose() {
     this.request++;
     if (this.isOpen) this.finishClose();
     this.controls.dispose();
     disposeThreeTree(this.scene);
-    for (const pass of this.pipeline.composer.passes) pass.dispose();
-    this.pipeline.composer.dispose();
     this.renderer.dispose();
     this.renderer.forceContextLoss();
     this.root.remove();
   }
-  private appliedQuality = "";
   private scene = new THREE.Scene();
   private camera = new THREE.PerspectiveCamera(34, 16 / 9, 0.3, 120);
   private controlCamera = this.camera.clone();
@@ -130,12 +121,6 @@ export class ModelViewer {
       this.renderer.domElement,
     );
     this.controls.enableDamping = false;
-    this.pipeline = createViewerPipeline(
-      this.renderer,
-      this.scene,
-      this.camera,
-    );
-    this.pipeline.smaa.enabled = false;
     this.controls.rotateSpeed = 0.65;
     this.controls.zoomSpeed = 0.7;
     this.controls.panSpeed = 0.7;
@@ -237,7 +222,7 @@ export class ModelViewer {
       for (const group of this.groups.values()) source.model.add(group);
       source.model.position.set(0, -1.85, 0);
       this.scene.add(source.model);
-      applyTextureQuality(source.model, this.renderer, this.quality);
+      applyTextureQuality(source.model, this.renderer, renderQuality);
       this.loading = false;
       loading.hidden = true;
       this.controls.enabled = true;
@@ -498,25 +483,14 @@ export class ModelViewer {
     }
   }
 
-  setQuality(quality: RenderQuality) {
-    const key = JSON.stringify(quality);
-    if (this.appliedQuality === key) return;
-    this.appliedQuality = key;
-    this.quality = normalizeQuality(quality);
-    this.pipeline.smaa.enabled = this.quality.antialias === "smaa";
-    applyTextureQuality(this.scene, this.renderer, this.quality);
-    this.resize();
-  }
-
   resize() {
     if (!this.isOpen) return;
     const width = this.canvasHost.clientWidth,
       height = this.canvasHost.clientHeight;
     resizeQuality(
       this.renderer,
-      this.pipeline.composer,
       this.canvasHost,
-      this.quality,
+      renderQuality,
     );
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
@@ -572,8 +546,7 @@ export class ModelViewer {
     const objectDistance = this.camera.position.length();
     fog.near = Math.max(0, objectDistance - 1);
     fog.far = objectDistance + 12;
-    if (this.quality.antialias === "smaa") this.pipeline.composer.render();
-    else this.renderer.render(this.scene, this.camera);
+    this.renderer.render(this.scene, this.camera);
     this.root.dataset.stats = JSON.stringify({
       ready: Boolean(this.source),
       clarity: this.clarity.value,

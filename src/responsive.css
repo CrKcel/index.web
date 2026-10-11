@@ -155,12 +155,6 @@
 :is([data-layout="compact"], [data-layout="portrait"]) .audio-settings { grid-template-columns: 1fr; gap: 0; }
 :is([data-layout="compact"], [data-layout="portrait"]) .settings-list label { gap: 16px; }
 :is([data-layout="compact"], [data-layout="portrait"]) .toggle { flex-shrink: 0; }
-:is([data-layout="compact"], [data-layout="portrait"]) .quality-grid { grid-template-columns: 1fr; gap: 0; }
-:is([data-layout="compact"], [data-layout="portrait"]) .quality-heading { gap: 12px; flex-wrap: wrap; }
-:is([data-layout="compact"], [data-layout="portrait"]) .quality-heading h3 span { margin-left: 8px; }
-:is([data-layout="compact"], [data-layout="portrait"]) .quality-range { display: block; }
-:is([data-layout="compact"], [data-layout="portrait"]) .quality-range > div { margin-top: 12px; }
-:is([data-layout="compact"], [data-layout="portrait"]) .quality-range input { width: 100%; min-width: 0; }
 :is([data-layout="compact"], [data-layout="portrait"]) .toast { max-width: calc(100% - 40px); width: max-content; font-size: 13px; bottom: 52px; }
 
 /* Object study: keep controls outside the model's usable canvas. */
