@@ -25,8 +25,7 @@ async function touch(page,points){
   await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:points[0][0],y:points[0][1],id:1}]});
   for(const [x,y] of points.slice(1)){await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x,y,id:1}]});await page.waitForTimeout(16)}
   // These are precise single-cell gestures; free flicks have their own momentum checks.
-  // Hold long enough for the speed-limited plane to reach the projected cell.
-  await page.waitForTimeout(900);
+  await page.waitForTimeout(160);
   await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await session.detach();
 }
 try{

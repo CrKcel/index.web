@@ -11,21 +11,6 @@ const output = resolve(".tools/array-input");
 await mkdir(output, { recursive: true });
 const report = [];
 const settle = (page) => page.waitForTimeout(2200);
-// Plane travel is speed limited, so a gesture needs a moment before the array
-// reaches the projected pointer destination.
-const projected = (page) =>
-  page.waitForFunction(
-    () => {
-      const s = window.readSnapshot();
-      return (
-        s.dragTarget !== null &&
-        Math.abs(s.columnCamera - s.dragTarget.lane) < 0.05 &&
-        Math.abs(s.rail - s.dragTarget.row) < 0.05
-      );
-    },
-    null,
-    { timeout: 8000 },
-  );
 try {
   for (const mobile of [false, true].filter(
     (mobile) =>
@@ -111,7 +96,7 @@ try {
         : page.mouse.up();
     await down(x, y);
     await move(x - laneStep * 0.3, y + 2);
-    await projected(page);
+    await page.waitForTimeout(150);
     const partial = await stats(page);
     assert.ok(partial.dragTarget);
     assert.equal(partial.selectedCell.lane, start.selectedCell.lane);
@@ -120,7 +105,7 @@ try {
       "Array follows before selecting the next cell",
     );
     await move(x - laneStep * 0.8, y + 3);
-    await projected(page);
+    await page.waitForTimeout(150);
     assert.equal(
       (await stats(page)).selectedCell.lane,
       start.selectedCell.lane + 1,
@@ -141,13 +126,13 @@ try {
     );
     await down(x, y);
     await move(x + 2, y - rowStep * 0.8);
-    await projected(page);
+    await page.waitForTimeout(150);
     assert.equal(
       (await stats(page)).selectedCell.row,
       lane.selectedCell.row + 1,
     );
     await move(x + 4, y + rowStep * 0.8);
-    await projected(page);
+    await page.waitForTimeout(150);
     const reverse = await stats(page);
     assert.equal(reverse.selectedCell.lane, lane.selectedCell.lane);
     assert.equal(
@@ -280,7 +265,7 @@ try {
     // A subsequent gesture must work after cancellation / multi-touch.
     await down(x, y);
     await move(x, y - rowStep * 0.8);
-    await projected(page);
+    await page.waitForTimeout(150);
     await up();
     await settle(page);
     assert.equal(

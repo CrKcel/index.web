@@ -8,21 +8,6 @@ const { chromium } = await loadPlaywright();
 const browser = await launchChromium(chromium);
 const report = [];
 await mkdir(".tools/array-input", { recursive: true });
-// Plane travel is speed limited, so a gesture needs a moment before the array
-// reaches the projected pointer destination.
-const projected = (page) =>
-  page.waitForFunction(
-    () => {
-      const s = window.readSnapshot();
-      return (
-        s.dragTarget !== null &&
-        Math.abs(s.columnCamera - s.dragTarget.lane) < 0.05 &&
-        Math.abs(s.rail - s.dragTarget.row) < 0.05
-      );
-    },
-    null,
-    { timeout: 8000 },
-  );
 try {
   for (const [width, height, mobile] of [
     [1920, 1080, false],
@@ -111,7 +96,7 @@ try {
         // Use the camera at pointer-down; mouse parallax can slightly change it.
         const direction = captured.dragProjection[axis];
         await move(x + direction.x * amount, y + direction.y * amount);
-        await projected(page);
+        await page.waitForTimeout(160);
         const during = await stats(page);
         assert.ok(during.dragTarget);
         const track = axis === "lane" ? "columnCamera" : "rail",
@@ -151,7 +136,7 @@ try {
     ];
     for (const [dx, dy] of paths) {
       await move(x + dx, y + dy);
-      await projected(page);
+      await page.waitForTimeout(100);
       const state = await stats(page);
       const lane = (state.columnCamera - anchor.columnCamera) / columnStep;
       const row = (state.rail - anchor.rail) / fileStep;

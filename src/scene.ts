@@ -33,20 +33,12 @@ import {
   smooth,
   INSPECTION_LIFT,
   returnStep,
-  type Spring,
 } from "./motion";
 import { planArchiveCamera } from "./archive-camera";
 import { ArchiveField, type FieldInputs } from "./archive-field";
 import { ArchivePointer, type ArchivePointerHost } from "./archive-pointer";
 import { ArchiveRenderGraph } from "./archive-render";
 import { ArchiveCassette } from "./archive-cassette";
-
-/**
- * Upper bound on how fast the archive plane may travel, in world units per
- * second. Keyboard steps and pointer drags share this bound so neither input
- * can move the array faster than the authored browsing pace.
- */
-const MAX_PLANE_SPEED = 4.5;
 
 /** Rounded reading, so two snapshots compare equal despite float noise. */
 const rounded = (value: number, digits = 4) =>
@@ -589,24 +581,6 @@ export class ArchiveScene {
       ? (coordinate - 2) * COLUMN_SPACING
       : -2.17 - (coordinate - 15.5) * ROW_SPACING;
   }
-  /**
-   * Ease a keyboard or selection track toward its target under the plane speed
-   * limit. Frames that would exceed the limit advance the spring in slowed
-   * time, so the motion keeps its easing shape instead of being clipped.
-   */
-  private glide(track: Spring, target: number, dt: number) {
-    const limit = MAX_PLANE_SPEED * dt;
-    const probe = { value: track.value, velocity: track.velocity };
-    damp(probe, target, 3.7, dt);
-    const step = Math.abs(probe.value - track.value);
-    damp(track, target, 3.7, step <= limit ? dt : dt * (limit / step));
-  }
-  /** Follow a pointer-driven target exactly until the speed limit binds. */
-  private follow(track: Spring, target: number, dt: number) {
-    const previous = track.value;
-    track.value = previous + THREE.MathUtils.clamp(target - previous, -MAX_PLANE_SPEED * dt, MAX_PLANE_SPEED * dt);
-    if (dt > 0) track.velocity = (track.value - previous) / dt;
-  }
   update(
     time: number,
     cinematic?: { reveal: number; lift: number; zoom: number; time: number },
@@ -666,9 +640,8 @@ export class ArchiveScene {
     damp(this.laneFocus, selectedLane, 4, dt);
     // A held or freely coasting plane owns both tracks; selection cannot pull it.
     if (!this.pointerControl.holdingArchive && !momentum) {
-      const row = cinematic ? 0 : -2.17 - chosen.z;
-      this.glide(this.columnCamera, chosen.x, dt);
-      this.glide(this.rail, row, dt);
+      damp(this.columnCamera, chosen.x, 3.7, dt);
+      damp(this.rail, cinematic ? 0 : -2.17 - chosen.z, 3.7, dt);
     }
     if (momentum) {
       this.columnCamera.value = this.trackPosition("lane", momentum.motion.lane.value);
@@ -679,8 +652,9 @@ export class ArchiveScene {
     }
     const dragTarget = this.pointerControl.dragTarget;
     if (dragTarget && !cinematic) {
-      this.follow(this.columnCamera, dragTarget.lane, dt);
-      this.follow(this.rail, dragTarget.row, dt);
+      this.columnCamera.value = dragTarget.lane;
+      this.rail.value = dragTarget.row;
+      this.columnCamera.velocity = this.rail.velocity = 0;
       this.pointerControl.navigatePlane({
         lane: this.trackCoordinate("lane", this.columnCamera.value),
         row: this.trackCoordinate("row", this.rail.value),
