@@ -39,6 +39,7 @@ export class TerminalAudio {
   private error = "";
   private requestId = 0;
   private suspension: Promise<void> = Promise.resolve();
+  private suspended = false;
   private bootMix = -1;
   private playedKeys = 0;
   private hostPaused = false;
@@ -77,8 +78,12 @@ export class TerminalAudio {
     this.requestId++;
     this.stopMusic();
     this.stopEffects();
-    this.suspension =
-      this.context?.suspend().catch(() => {}) ?? Promise.resolve();
+    if (this.context) {
+      // Firefox keeps reporting "running" until the main thread publishes this
+      // suspension, so activate() has to undo it instead of trusting a read.
+      this.suspended = true;
+      this.suspension = this.context.suspend().catch(() => {});
+    }
   };
   private visibility = () => {
     this.bootTime = null;
@@ -147,10 +152,19 @@ export class TerminalAudio {
     const id = ++this.requestId;
     try {
       const c = this.context ?? this.createContext();
-      // Call resume before awaiting network or an earlier suspension so the
-      // browser observes this call in the user's activation handler.
-      const resume = c.state === "running" ? Promise.resolve() : c.resume();
-      await Promise.all([this.suspension, resume]);
+      // A resume has to run while the browser still holds the user's
+      // activation. A suspension this facade issued is undone after it lands,
+      // because Firefox reports "running" until the main thread publishes the
+      // suspend and a hide/show pair can arrive inside that window.
+      if (this.suspended) {
+        await this.suspension;
+        if (id !== this.requestId) return;
+        await c.resume();
+        if (id !== this.requestId) return;
+        this.suspended = false;
+      } else if (c.state !== "running") {
+        await c.resume();
+      }
       if (id !== this.requestId || this.disposed || document.hidden) return;
       if (c.state !== "running") return;
       if (id !== this.requestId || document.hidden || this.disposed) return;

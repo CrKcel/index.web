@@ -12,7 +12,7 @@ import { TerminalAudio } from "../src/audio.ts";
 // ---- Recording AudioContext ------------------------------------------------
 // Values arrive through the same calls the browser receives, so the check can
 // assert on the scheduled timeline instead of on internal state.
-function createAudio() {
+function createAudio({ suspendLag = false } = {}) {
   const sources = [];
   const stops = [];
   const pans = [];
@@ -101,8 +101,15 @@ function createAudio() {
       return Promise.resolve();
     }
     suspend() {
-      this.state = "suspended";
-      return Promise.resolve();
+      if (!suspendLag) {
+        this.state = "suspended";
+        return Promise.resolve();
+      }
+      // Firefox keeps reporting "running" until the main thread publishes the
+      // suspension, so the state only moves when the promise settles.
+      return Promise.resolve().then(() => {
+        this.state = "suspended";
+      });
     }
     close() {
       this.state = "closed";
@@ -253,6 +260,40 @@ assert.equal(context.state, "running");
 terminal.dispose();
 assert.equal(context.state, "closed", "Dispose closes the device");
 assert.equal(dom.listeners.size, 0, "Dispose detaches every document and window listener");
+
+// ---- Suspension that lands after the facade reads it ------------------------
+// Firefox keeps reporting "running" until the main thread publishes a suspend()
+// the facade issued, so a hide/show pair delivered inside that window has to be
+// undone from the suspension it is still waiting on.
+{
+  const dom = installDom();
+  const audio = createAudio({ suspendLag: true });
+  globalThis.AudioContext = audio.AudioContext;
+  const terminal = new TerminalAudio();
+  terminal.configure({ sound: true, music: false, soundVolume: 0.6, musicVolume: 0.4 });
+  dom.listeners.get("document:pointerdown")();
+  assert.equal(await terminal.unlock(), true, "A gesture unlocks a device that lags its suspension");
+  const context = audio.instances[0];
+  const visibility = dom.listeners.get("document:visibilitychange");
+  globalThis.document.hidden = true;
+  visibility();
+  globalThis.document.hidden = false;
+  visibility();
+  for (let turn = 0; turn < 16; turn++) await Promise.resolve();
+  assert.equal(
+    context.state,
+    "running",
+    "A hide/show inside the suspension window leaves the device running",
+  );
+  assert.equal(terminal.stats().state, "running");
+  const scheduled = audio.sources.length;
+  terminal.play("tick");
+  assert.ok(
+    audio.sources.length > scheduled,
+    "Effects schedule again after the fast hide/show",
+  );
+  terminal.dispose();
+}
 
 // ---- Music transport -------------------------------------------------------
 {
