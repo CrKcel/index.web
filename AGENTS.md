@@ -25,7 +25,8 @@
 | [`src/audio.ts`](src/audio.ts) | 音频设备生命周期、手势解锁、音效节流与开场提示调度 |
 | [`src/audio-synth.ts`](src/audio-synth.ts)、[`src/audio-music.ts`](src/audio-music.ts)、[`src/audio-types.ts`](src/audio-types.ts)、[`public/audio/`](public/audio/) | 交互音效合成、三轨配乐循环与声部比例、音效清单与音源记录 |
 | [`src/render-quality.ts`](src/render-quality.ts)、[`src/quality-renderer.ts`](src/quality-renderer.ts) | 渲染参数与渲染管线 |
-| [`content/archives.json`](content/archives.json) | 页面与下载共用的五类、40 份档案数据 |
+| [`content/archives/`](content/archives/) | 五类、40 份档案正文；每份一个 Markdown 文件，YAML 前辅文保存元数据 |
+| [`content/archives.yaml`](content/archives.yaml) | 检索筛选器与三维阵列的五列分类 |
 | [`src/data.ts`](src/data.ts) | 档案类型与阵列位置映射 |
 | [`public/assets/`](public/assets/) | 运行所需的 GLB 模型 |
 | [`art/`](art/) | Blender 源文件、建模与审阅脚本 |
@@ -36,7 +37,8 @@
 
 | 命令 | 作用 |
 | --- | --- |
-| `npm run dev` | 本地开发，启动前校验档案数据；开发模式不注册 Service Worker |
+| `npm run dev` | 本地开发，启动前校验档案数据并生成页面数据；开发模式不注册 Service Worker |
+| `npm run content:build` | 校验 `content/archives/*.md` 与分类配置，重新生成 `content/archives.generated.json` |
 | `npm run build` | `tsc` + Vite 构建到 `dist`，并生成带内容版本的 Service Worker；构建前校验档案数据 |
 | `npm run build:worker` | 在 `build` 之后打包 Cloudflare 发行包到 `release/cloudflare/site` |
 | `npm run deploy` | `build:worker` 之后由 Wrangler 上传发行包 |
@@ -75,7 +77,7 @@ Wrangler：`npx wrangler dev` 本地开发，`npx wrangler deploy` 部署，`npx
 
 ## 档案内容
 
-档案内容独立保存在 `content/archives.json`，`npm run dev` 与 `npm run build` 构建前校验；保留五列、每列八份与稳定编号约束，字段与操作步骤见 `content/README.md`。
+档案内容独立保存在 `content/archives/*.md`，分类顺序在 `content/archives.yaml`。每份档案用 YAML 前辅文保存元数据，Markdown 正文在 `## 研究记录` 前为摘要、之后为列表式研究记录。`npm run dev`、`npm run build` 与 `npm run check` 都会在构建前校验并生成 `content/archives.generated.json`；保留五列、每列八份与稳定编号约束，字段与操作步骤见 `content/README.md`。
 
 ## 视觉与排字
 

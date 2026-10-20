@@ -10,14 +10,14 @@ const tabPanel = (label: string, body: string) =>
   `<div class="panel-label">${label}</div>${body}`;
 
 export function overviewMarkup(record: ArchiveRecord) {
-  return tabPanel("ABSTRACT / 摘要", `<p>${escapeHtml(record.abstract)}</p>`);
+  return tabPanel("ABSTRACT / 摘要", `<div class="detail-body">${record.abstractHtml}</div>`);
 }
 
 export function researchNotesMarkup(record: ArchiveRecord) {
   return tabPanel(
     "RESEARCH NOTES / 研究记录",
-    `<ol class="research-notes">${record.findings
-      .map((finding, i) => `<li><span>${String(i + 1).padStart(2, "0")}</span>${escapeHtml(finding)}</li>`)
+    `<ol class="research-notes">${record.findingsHtml
+      .map((finding, i) => `<li><span>${String(i + 1).padStart(2, "0")}</span>${finding}</li>`)
       .join("")}</ol>`,
   );
 }

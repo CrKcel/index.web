@@ -20,3 +20,6 @@ __pycache__/
 
 .wrangler/
 .DS_Store
+
+# Generated from content/archives/*.md by scripts/build-content.mjs
+content/archives.generated.json

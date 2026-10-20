@@ -9,9 +9,11 @@
   },
   "scripts": {
     "postinstall": "node scripts/patch-rolling-number.mjs",
-    "predev": "node scripts/patch-rolling-number.mjs && node scripts/validate-content.mjs",
+    "predev": "node scripts/patch-rolling-number.mjs && node scripts/build-content.mjs",
     "dev": "vite --host 127.0.0.1",
-    "prebuild": "node scripts/patch-rolling-number.mjs && node scripts/validate-content.mjs",
+    "prebuild": "node scripts/patch-rolling-number.mjs && node scripts/build-content.mjs",
+    "content:build": "node scripts/build-content.mjs",
+    "precheck": "node scripts/build-content.mjs",
     "check": "node scripts/check.mjs",
     "check:content": "node --import ./scripts/type-import-loader.mjs --experimental-strip-types --test scripts/check-content.mjs",
     "check:browser": "node scripts/check.mjs browser",
@@ -28,9 +30,11 @@
   },
   "devDependencies": {
     "@types/three": "^0.183.0",
+    "markdown-it": "^15.0.3",
     "prettier": "^3.9.6",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
-    "wrangler": "^4.148.0"
+    "wrangler": "^4.148.0",
+    "yaml": "^2.9.1"
   }
 }

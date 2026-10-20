@@ -1,4 +1,4 @@
-import content from "../content/archives.json" with { type: "json" };
+import content from "../content/archives.generated.json" with { type: "json" };
 
 export interface ArchiveRecord {
   id: string;
@@ -9,8 +9,10 @@ export interface ArchiveRecord {
   date: string;
   lead: string;
   clearance: string;
-  abstract: string;
-  findings: string[];
+  abstractText: string;
+  abstractHtml: string;
+  findingsText: string[];
+  findingsHtml: string[];
   source: string;
 }
 

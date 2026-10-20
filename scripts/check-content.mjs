@@ -1,10 +1,41 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { loadContent, validateContent } from "./archive-content.mjs";
+import {
+  markdownText,
+  parseArchiveBody,
+  renderMarkdown,
+} from "./content-markdown.mjs";
 import { archiveText } from "../src/archive-text.ts";
 import { escapeHtml } from "../src/html.ts";
 
 const content = await loadContent();
+test("loads one markdown source per record", () => {
+  assert.equal(content.records.length, 40);
+  assert.equal(content.records[0].file, "X-001.md");
+  assert.ok(content.records[0].abstract.length > 0);
+  assert.ok(content.records[0].findings.length > 0);
+});
+test("splits the markdown body at the notes heading", () => {
+  const parsed = parseArchiveBody(
+    "摘要 **加粗**。\n\n## 研究记录\n\n- 第一条\n- 第二条",
+  );
+  assert.equal(parsed.abstract, "摘要 **加粗**。");
+  assert.deepEqual(parsed.findings, ["第一条", "第二条"]);
+});
+test("rejects missing or empty research notes", () => {
+  assert.throws(() => parseArchiveBody("只有摘要"), /研究记录/);
+  assert.throws(() => parseArchiveBody("摘要\n\n## 研究记录"), /列表项/);
+  assert.throws(
+    () => parseArchiveBody("摘要\n\n## 研究记录\n\n- 第一条\n\n多余段落"),
+    /只能包含列表项/,
+  );
+});
+test("renders markdown without passing raw HTML through", () => {
+  assert.equal(renderMarkdown("**粗体**"), "<p><strong>粗体</strong></p>");
+  assert.ok(renderMarkdown("<script>x</script>").includes("&lt;script&gt;"));
+  assert.equal(markdownText("**粗体** [链接](https://example.com)"), "粗体 链接");
+});
 test("download text carries every field of the record", () => {
   const record = {
     ...content.records[0],
@@ -14,8 +45,8 @@ test("download text carries every field of the record", () => {
     date: "C1",
     lead: "L1",
     clearance: "K1",
-    abstract: "A1",
-    findings: ["F1", "F2"],
+    abstractText: "A1",
+    findingsText: ["F1", "F2"],
     source: "https://example.com/x",
   };
   const text = archiveText(record);
@@ -27,8 +58,8 @@ test("download text carries every field of the record", () => {
     record.date,
     record.lead,
     record.clearance,
-    record.abstract,
-    ...record.findings,
+    record.abstractText,
+    ...record.findingsText,
     record.source,
   ])
     assert.ok(text.includes(value), `download text is missing ${value}`);
@@ -163,5 +194,11 @@ test("plain-text punctuation stays literal in HTML and downloadable text", () =>
     escapeHtml(title),
     "&lt;玻璃&gt; &amp; &quot;实验&quot; &#39;A&#39;",
   );
-  assert.ok(archiveText(edited.records[0]).includes(title));
+  assert.ok(
+    archiveText({
+      ...edited.records[0],
+      abstractText: edited.records[0].abstract,
+      findingsText: edited.records[0].findings,
+    }).includes(title),
+  );
 });
