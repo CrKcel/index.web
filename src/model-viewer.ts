@@ -56,7 +56,6 @@ export class ModelViewer {
   private transitions: Animation[] = [];
   private modelTransition?: Animation;
   private transitionId = 0;
-  private status = "";
   private opener: HTMLElement | null = null;
   private siblings: { node: HTMLElement; inert: boolean }[] = [];
   private initialCamera = new THREE.Vector3(7.2, 3.8, 12);
@@ -82,7 +81,7 @@ export class ModelViewer {
       <div class="viewer-canvas"></div>
       <div class="scene-atmosphere viewer-atmosphere" aria-hidden="true"></div>
       <header class="viewer-header">
-        <button class="viewer-back" data-viewer="close">← <span>返回档案</span><kbd>ESC</kbd></button>
+        <button class="viewer-back" data-viewer="close">← <span>返回档案</span></button>
         <div class="viewer-heading"><span>RHINE LAB / OBJECT STUDY</span><h2 id="viewer-title">档案模型</h2><p id="viewer-file"></p></div>
         <span class="viewer-index">360<span>°</span></span>
       </header>
@@ -91,10 +90,9 @@ export class ModelViewer {
       <div class="viewer-loading" role="status"><span>正在载入模型…</span><button data-viewer="retry" hidden>重新载入 ↗</button></div>
       <footer class="viewer-footer">
         <div class="viewer-help"><span>拖动旋转</span><span>↑ ↓ ← → 平移</span><span>滚轮缩放</span></div>
-        <div class="viewer-actions"><button data-viewer="explode" aria-pressed="false"><span>＋</span> 拆解档案</button><button data-viewer="assemble" aria-pressed="true"><span>−</span> 一键重组</button></div>
+        <div class="viewer-actions"><button data-viewer="toggle" aria-pressed="false"><span>＋</span> 拆解档案</button></div>
         <button class="viewer-reset" data-viewer="reset">复位视角 <span>↗</span></button>
-      </footer>
-      <div class="viewer-state" aria-live="polite">已组装</div>`;
+      </footer>`;
     parent.appendChild(this.root);
     this.canvasHost = this.root.querySelector(".viewer-canvas")!;
     this.renderer = new THREE.WebGLRenderer({
@@ -104,10 +102,6 @@ export class ModelViewer {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.05;
     this.renderer.domElement.tabIndex = 0;
-    this.renderer.domElement.setAttribute(
-      "aria-label",
-      "档案三维模型：拖动旋转，方向键平移，滚轮或加减键缩放，Home 复位",
-    );
     this.canvasHost.appendChild(this.renderer.domElement);
     this.scene.background = new THREE.Color("#eae5e1");
     this.scene.fog = new THREE.Fog("#eae5e1", 13.5, 26.5);
@@ -146,13 +140,10 @@ export class ModelViewer {
         this.setSurface(action === "clear");
         this.onSound("tick");
       }
-      if (action === "explode" && this.targetSpread !== 1) {
-        this.setExploded(true);
-        this.onSound("explode");
-      }
-      if (action === "assemble" && this.targetSpread !== 0) {
-        this.setExploded(false);
-        this.onSound("assemble");
+      if (action === "toggle") {
+        const explode = this.targetSpread !== 1;
+        this.setExploded(explode);
+        this.onSound(explode ? "explode" : "assemble");
       }
       if (action === "reset") {
         this.resetView();
@@ -228,7 +219,6 @@ export class ModelViewer {
       this.controls.enabled = true;
       this.setButtonsDisabled(false);
       this.setExploded(false);
-      this.setStatus("已组装");
       // Render before revealing the canvas so a new model never flashes in.
       this.update(this.lastTime);
       this.modelTransition = this.canvasHost.animate(
@@ -259,7 +249,6 @@ export class ModelViewer {
     for (const selector of [
       ".viewer-header",
       ".viewer-footer",
-      ".viewer-state",
     ]) {
       const element = this.root.querySelector<HTMLElement>(selector)!;
       this.transitions.push(
@@ -351,7 +340,7 @@ export class ModelViewer {
   }
 
   private setButtonsDisabled(disabled: boolean) {
-    for (const action of ["explode", "assemble", "reset", "clear", "frosted"]) {
+    for (const action of ["toggle", "reset", "clear", "frosted"]) {
       this.root.querySelector<HTMLButtonElement>(
         `[data-viewer="${action}"]`,
       )!.disabled = disabled;
@@ -366,21 +355,13 @@ export class ModelViewer {
   private setExploded(value: boolean) {
     this.targetSpread = value ? 1 : 0;
     this.root.dataset.exploded = String(value);
-    this.root
-      .querySelector('[data-viewer="explode"]')!
-      .setAttribute("aria-pressed", String(value));
-    this.root
-      .querySelector('[data-viewer="assemble"]')!
-      .setAttribute("aria-pressed", String(!value));
-    this.setStatus(
-      value ? "正在拆解" : this.spread.value > 0.001 ? "正在重组" : "已组装",
-    );
-  }
-  private setStatus(value: string) {
-    if (value !== this.status) {
-      this.status = value;
-      this.root.querySelector(".viewer-state")!.textContent = value;
-    }
+    const button = this.root.querySelector<HTMLButtonElement>(
+      '[data-viewer="toggle"]',
+    )!;
+    button.setAttribute("aria-pressed", String(value));
+    button.innerHTML = value
+      ? "<span>−</span> 一键重组"
+      : "<span>＋</span> 拆解档案";
   }
   private resetView(animated = true) {
     this.controls.enabled = false;
@@ -520,7 +501,6 @@ export class ModelViewer {
         Math.abs(this.spread.velocity) < 0.001
       ) {
         this.spread = { value: this.targetSpread, velocity: 0 };
-        this.setStatus(this.targetSpread ? "已拆解" : "已组装");
       }
       for (const part of PARTS) {
         this.groups.get(part.id)!.position.z = part.depth * this.spread.value;

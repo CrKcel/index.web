@@ -75,7 +75,7 @@ for(const [name,width,height,mobile] of cases.filter(([name])=>!process.env.REVI
  await page.locator('.viewer-open').click();
  await page.waitForFunction(()=>JSON.parse(document.querySelector('.model-viewer')?.dataset.stats||'{}').ready,null,{timeout:60000});
  await page.waitForTimeout(550);
- await page.locator('[data-viewer="explode"]').click();await page.waitForFunction(()=>JSON.parse(document.querySelector('.model-viewer').dataset.stats).spread>.999);
+ await page.locator('[data-viewer="toggle"]').click();await page.waitForFunction(()=>JSON.parse(document.querySelector('.model-viewer').dataset.stats).spread>.999);
  await inside(page,['.viewer-back','.viewer-actions','.viewer-reset','.viewer-surface'],width,height);
  await page.screenshot({path:resolve(output,`${name}-viewer-final.png`)});
  const viewerBefore=await page.locator('.model-viewer').evaluate(el=>JSON.parse(el.dataset.stats));
@@ -97,7 +97,7 @@ for(const [name,width,height,mobile] of cases.filter(([name])=>!process.env.REVI
    assert.equal((await stats(page)).selected,entry.detailStats.selected);
    await page.setViewportSize({width,height});await page.waitForTimeout(350);
  }
- await page.locator('[data-viewer="assemble"]').click();await page.locator('[data-viewer="close"]').click();
+ await page.locator('[data-viewer="toggle"]').click();await page.locator('[data-viewer="close"]').click();
  await page.waitForFunction(()=>document.querySelector('.model-viewer').hidden);
  assert.ok(await page.evaluate(()=>document.activeElement?.classList.contains('viewer-open')),'Closing the viewer returns focus to its opener');
  await page.locator('[data-action="back"]').click();await page.waitForTimeout(350);

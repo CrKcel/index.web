@@ -157,7 +157,6 @@
 :is([data-layout="compact"], [data-layout="portrait"]) .viewer-header { top: var(--top-edge); left: var(--edge); right: var(--edge); }
 :is([data-layout="compact"], [data-layout="portrait"]) .viewer-back { padding: 0; min-height: 44px; gap: 8px; }
 :is([data-layout="compact"], [data-layout="portrait"]) .viewer-back span { font-size: 13px; }
-:is([data-layout="compact"], [data-layout="portrait"]) .viewer-back kbd { display: none; }
 :is([data-layout="compact"], [data-layout="portrait"]) .viewer-heading { margin-left: 24px; padding-top: 4px; }
 :is([data-layout="compact"], [data-layout="portrait"]) .viewer-heading > span { font-size: 8px; }
 :is([data-layout="compact"], [data-layout="portrait"]) .viewer-heading h2 { font-size: 20px; margin: 5px 0; }
@@ -172,7 +171,6 @@
 :is([data-layout="compact"], [data-layout="portrait"]) .viewer-reset span { margin-left: 8px; }
 :is([data-layout="compact"], [data-layout="portrait"]) .viewer-actions button { min-width: 100px; min-height: 44px; padding: 10px 12px; font-size: 12px; }
 :is([data-layout="compact"], [data-layout="portrait"]) .viewer-actions button span { margin-right: 4px; }
-:is([data-layout="compact"], [data-layout="portrait"]) .viewer-state { bottom: var(--bottom-edge); font-size: 9px; }
 :is([data-layout="compact"], [data-layout="portrait"]) .viewer-parts { top: 130px; right: var(--edge); width: 110px; }
 :is([data-layout="compact"], [data-layout="portrait"]) .viewer-parts > div { font-size: 8px; margin-bottom: 10px; }
 :is([data-layout="compact"], [data-layout="portrait"]) .viewer-parts p { margin: 0 0 6px; padding: 0 0 6px 20px; }

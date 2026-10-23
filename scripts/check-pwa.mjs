@@ -64,7 +64,7 @@ try{
  const exported=Buffer.concat(chunks).toString('utf8');
  assert.ok(exported.includes('X-001'),'Offline export writes the saved record');
  await page.locator('.viewer-open').click();await page.waitForFunction(()=>JSON.parse(document.querySelector('.model-viewer')?.dataset.stats||'{}').ready);
- await page.locator('[data-viewer="explode"]').click();await page.waitForFunction(()=>JSON.parse(document.querySelector('.model-viewer').dataset.stats).spread===1);
+ await page.locator('[data-viewer="toggle"]').click();await page.waitForFunction(()=>JSON.parse(document.querySelector('.model-viewer').dataset.stats).spread===1);
  await mkdir('.tools/responsive',{recursive:true});await page.screenshot({path:'.tools/responsive/pwa-offline.png'});
  assert.equal(await page.evaluate(async()=>{const r=await fetch('/audio/motif.ogg');if(!r.ok)return 0;return (await r.arrayBuffer()).byteLength}),(await readFile(resolve(root,'audio/motif.ogg'))).length,'The score is served whole from the cache');
  report.checks.push('offline reload, document export, model viewer, explosion and audio resource');

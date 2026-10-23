@@ -1726,14 +1726,6 @@ button {
 .viewer-back span {
   font-size: 15px;
 }
-.viewer-back kbd {
-  font-family: inherit;
-  font-size: 10px;
-  border: 1px solid #b8b3a9;
-  padding: 4px;
-  color: #817b70;
-  margin-left: 8px;
-}
 .viewer-heading {
   margin-left: 74px;
   padding-top: 12px;
@@ -1862,16 +1854,6 @@ button {
 }
 .viewer-reset span {
   margin-left: 18px;
-}
-.viewer-state {
-  position: absolute;
-  left: 50%;
-  bottom: 37px;
-  transform: translateX(-50%);
-  color: #85806f;
-  font-size: 11px;
-  letter-spacing: 1px;
-  pointer-events: none;
 }
 .viewer-loading {
   position: absolute;
