@@ -4,7 +4,7 @@ import { disposeThreeTree } from "./three-resources";
 import { ThemeWave } from "./theme-motion";
 import { themeEnvironment } from "./theme-material";
 import { RhythmMotion, quietBands, type MusicBands, type RhythmStyle } from "./archive-play-motion";
-import { createArchiveLighting, type LightingLook } from "./archive-lighting";
+import { createArchiveLighting } from "./archive-lighting";
 import { renderQuality } from "./render-quality";
 import { CardAppearance } from "./appearance";
 import { DecryptionController } from "./decryption";
@@ -262,7 +262,6 @@ export class ArchiveScene {
     private container: HTMLElement,
     private readonly selectionPulse = baselineSelectionWave,
     private readonly deferSelectionPulse = false,
-    private readonly lightingLook: LightingLook = "baseline",
   ) {
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -270,7 +269,7 @@ export class ArchiveScene {
       powerPreference: "high-performance",
     });
     this.renderer.setPixelRatio(
-      Math.min(devicePixelRatio, 1.5) *
+      Math.min(devicePixelRatio, renderQuality.pixelRatio) *
         Math.min(innerWidth / 1920, innerHeight / 1080),
     );
     this.renderer.setSize(container.clientWidth, container.clientHeight);
@@ -292,7 +291,7 @@ export class ArchiveScene {
     // beauty, normal, depth and transmission renders reuse those same matrices.
     this.scene.matrixWorldAutoUpdate = false;
     this.scene.fog = new THREE.Fog("#eae5e1", 22, 47);
-    this.light = createArchiveLighting(this.renderer, this.scene, lightingLook);
+    this.light = createArchiveLighting(this.renderer, this.scene);
     this.light.castShadow = true;
     Object.assign(this.light.shadow.camera, {
       left: -16,
@@ -303,8 +302,8 @@ export class ArchiveScene {
       far: 45,
     });
     this.light.shadow.mapSize.set(2048, 2048);
-    this.light.shadow.normalBias = lightingLook === "refined" ? 0.018 : 0.035;
-    this.light.shadow.bias = lightingLook === "refined" ? -0.00012 : -0.0003;
+    this.light.shadow.normalBias = 0.018;
+    this.light.shadow.bias = -0.00012;
     this.light.shadow.radius = 4;
     const floor = new THREE.Mesh(
       new THREE.PlaneGeometry(200, 200),
@@ -320,7 +319,6 @@ export class ArchiveScene {
       scene: this.scene,
       appearance: this.appearance,
       floor,
-      look: lightingLook,
     });
     this.camera.position.set(-62.26, 35.98, 43.28);
     this.cameraAim.set(-0.5, 1.1, 0.4);
@@ -332,7 +330,6 @@ export class ArchiveScene {
       scene: this.scene,
       camera: this.camera,
       light: this.light,
-      look: lightingLook,
     });
     this.pointerControl = new ArchivePointer(this.renderer.domElement, this.pointerHost);
   }

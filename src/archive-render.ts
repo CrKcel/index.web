@@ -8,7 +8,6 @@ import * as THREE from "three";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import type { LightingLook } from "./archive-lighting";
 import { applyTextureQuality, resizeQuality } from "./quality-renderer";
 import { renderQuality } from "./render-quality";
 import { RenderState } from "./render-state";
@@ -20,7 +19,6 @@ export type RenderGraphOptions = {
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
   light: THREE.DirectionalLight;
-  look: LightingLook;
 };
 
 export type RenderFrame = {
@@ -67,7 +65,7 @@ export class ArchiveRenderGraph {
       this.container.clientWidth,
       this.container.clientHeight,
     );
-    this.ao.kernelRadius = options.look === "refined" ? 0.44 : 0.38;
+    this.ao.kernelRadius = 0.44;
     this.ao.minDistance = 0.001;
     this.ao.maxDistance = 0.09;
     this.composer.addPass(this.ao);

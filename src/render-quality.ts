@@ -13,7 +13,7 @@ export type RenderQuality = {
 
 export const renderQuality: RenderQuality = {
   scale: 100,
-  pixelRatio: 1.5,
+  pixelRatio: 2,
   shadows: 2048,
   aoSamples: 32,
   aoResolution: 1,

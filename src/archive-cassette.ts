@@ -12,7 +12,6 @@ import { ArchiveDrawCoverage, ArchiveShadowCoverage } from "./archive-draw-cover
 import { InstanceUpdates } from "./instance-updates";
 import { disposeThreeTree } from "./three-resources";
 import { themeMaterial, themeEnvironment } from "./theme-material";
-import type { LightingLook } from "./archive-lighting";
 import { configureInternalOptics } from "./internal-optics";
 import { CardAppearance } from "./appearance";
 import { systemFontStack } from "./fonts";
@@ -65,7 +64,6 @@ export type CassetteOptions = {
   scene: THREE.Scene;
   appearance: CardAppearance;
   floor: THREE.Mesh;
-  look: LightingLook;
 };
 
 export class ArchiveCassette {
@@ -81,7 +79,6 @@ export class ArchiveCassette {
   private readonly scene: THREE.Scene;
   private readonly appearance: CardAppearance;
   private readonly floor: THREE.Mesh;
-  private readonly look: LightingLook;
   private instances: THREE.InstancedMesh[] = [];
   private surfaceInstances: THREE.InstancedMesh[] = [];
   private impostor?: THREE.InstancedMesh;
@@ -102,7 +99,6 @@ export class ArchiveCassette {
     this.scene = options.scene;
     this.appearance = options.appearance;
     this.floor = options.floor;
-    this.look = options.look;
   }
   /** Version of the instanced theme buffer; part of the frame identity. */
   get themeVersion() {
@@ -150,7 +146,7 @@ export class ArchiveCassette {
         mat.attenuationDistance = 2;
       }
       if (name === "Internal_Ceramic") {
-        mat.color.set(this.look === "refined" ? "#c4baae" : "#c7beb6");
+        mat.color.set("#c4baae");
         mat.roughness = 0.6;
       }
       if (name === "Printed_Label") mat.color.set("#eae5dc");
@@ -166,7 +162,7 @@ export class ArchiveCassette {
         mat.roughness = 0.7;
       }
       if (name === "Subsurface_Optics") {
-        mat.color.set(this.look === "refined" ? "#b9a796" : "#b9aba1");
+        mat.color.set("#b9a796");
         mat.roughness = 0.48;
         mat.metalness = 0.05;
       }
@@ -174,7 +170,7 @@ export class ArchiveCassette {
         // Internal refractive shoulders must be in the opaque capture: WebGL's
         // screen-space transmission cannot recursively sample another glass mesh.
         mat.transmission = 0;
-        mat.color.set(this.look === "refined" ? "#d8c7b5" : "#d4c7be");
+        mat.color.set("#d8c7b5");
         mat.roughness = 0.26;
         mat.metalness = 0.08;
       }
@@ -202,13 +198,11 @@ export class ArchiveCassette {
       const arrayMat = mat.clone();
       if (name === "Frosted_Polymer") {
         arrayMat.transmission = 0.78;
-        if (this.look === "refined") {
-          // Longer oblique paths pick up the warm body tint, while the thin
-          // edges and the extracted clear cover retain a brighter response.
-          arrayMat.thickness = 0.28;
-          arrayMat.attenuationColor.set("#d4c7b4");
-          arrayMat.attenuationDistance = 1.2;
-        }
+        // Longer oblique paths pick up the warm body tint, while the thin
+        // edges and the extracted clear cover retain a brighter response.
+        arrayMat.thickness = 0.28;
+        arrayMat.attenuationColor.set("#d4c7b4");
+        arrayMat.attenuationDistance = 1.2;
         arrayMat.transparent = false;
         arrayMat.color.set("#fff7ed");
         arrayMat.onBeforeCompile = (shader) => {
@@ -232,9 +226,7 @@ export class ArchiveCassette {
       if (name === "Optical_Diffuser") arrayMat.color.set("#806447");
       if (name === "Ivory_Edges") {
         arrayMat.transmission = 0;
-        arrayMat.color.set(
-          this.look === "refined" ? "#dcc9b0" : "#fff5e9",
-        );
+        arrayMat.color.set("#dcc9b0");
         arrayMat.roughness = 0.38;
       }
       if (name === "Index_Inlay") {
