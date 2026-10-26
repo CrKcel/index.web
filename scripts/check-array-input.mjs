@@ -190,32 +190,12 @@ try {
       assert.ok(moved.hoverLifts[`${moved.hoverCell.lane}:${moved.hoverCell.row}`] > 0, "The lifted card is the hovered one");
       await page.mouse.move(x, y);
       const beforeWheel = await stats(page);
-      await page.mouse.wheel(0, 100);
-      await page.waitForTimeout(100);
-      assert.ok(
-        (await stats(page)).selectedCell.row > beforeWheel.selectedCell.row,
-        "Wheel advances through the files",
-      );
-      await page.mouse.wheel(0, -100);
-      await settle(page);
-      assert.equal(
-        (await stats(page)).selectedCell.row,
-        beforeWheel.selectedCell.row,
-      );
-      await page.locator('[data-action="settings"]').click();
-      await page.waitForTimeout(350);
-      const modal = await stats(page);
-      await page.mouse.move(x, y);
-      await page.mouse.wheel(0, 400);
-      await page.waitForTimeout(200);
+      await page.mouse.wheel(0, 300);
+      await page.waitForTimeout(300);
       assert.deepEqual(
         (await stats(page)).selectedCell,
-        modal.selectedCell,
-        "Modal blocks array wheel navigation",
-      );
-      await page.locator('[data-action="close-modal"]').click();
-      await page.waitForFunction(
-        () => !document.querySelector(".modal-backdrop"),
+        beforeWheel.selectedCell,
+        "Wheel does not switch files",
       );
     }
     // Run across a complete row cycle, checking physical direction at the seam.

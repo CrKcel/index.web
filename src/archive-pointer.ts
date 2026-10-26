@@ -1,4 +1,4 @@
-// Pointer, wheel and drag handling for the archive plane.
+// Pointer and drag handling for the archive plane.
 //
 // This is the only module that turns browser input into plane state: the drag
 // gesture, the coasting hand-off, hover sampling, the inspection rotation and
@@ -8,7 +8,6 @@
 import {
   ArchiveDrag,
   ArchivePlaneMomentum,
-  type DragAxis,
   type DragProjection,
   type DragPosition,
 } from "./archive-drag";
@@ -43,7 +42,6 @@ export interface ArchivePointerHost {
   pointed(x: number, y: number): void;
   /** Selection along a travelled segment; no cancellation and no sound. */
   emitSelect(cell: ArchiveCell): void;
-  navigate(axis: DragAxis, direction: number): void;
   relayPick(key: string | null): void;
   /** Add a sideways rotation to the extracted file, in radians. */
   rotate(delta: number): void;
@@ -74,8 +72,6 @@ export class ArchivePointer {
   private browse = false;
   private cancelled = false;
   private startTrack: DragPosition = { lane: 0, row: 0 };
-  private wheelTotal = 0;
-  private wheelTime = 0;
   constructor(canvas: HTMLCanvasElement, host: ArchivePointerHost) {
     this.canvas = canvas;
     this.host = host;
@@ -146,7 +142,6 @@ export class ArchivePointer {
     this.cancelled = true;
     this.stopMomentum();
     this.pointers.clear();
-    this.wheelTotal = 0;
     this.reset();
   }
   dispose() {
@@ -306,52 +301,6 @@ export class ArchivePointer {
       this.host.pointed(0, 0);
       this.host.hover(null);
     }, { signal: this.events.signal });
-    canvas.addEventListener(
-      "wheel",
-      (e) => {
-        if (this.host.relayActive()) {
-          e.preventDefault();
-          return;
-        }
-        if (
-          !this.host.canBrowse() ||
-          this.activePointer !== null ||
-          e.ctrlKey ||
-          Math.abs(e.deltaX) > Math.abs(e.deltaY)
-        )
-          return;
-        e.preventDefault();
-        if (this.coast) this.stopMomentum();
-        const now = performance.now();
-        const delta = Math.max(
-          -300,
-          Math.min(
-            300,
-            e.deltaY *
-              (e.deltaMode === 1
-                ? 40
-                : e.deltaMode === 2
-                  ? canvas.clientHeight
-                  : 1),
-          ),
-        );
-        if (now - this.wheelTime > 180 || Math.sign(delta) !== Math.sign(this.wheelTotal))
-          this.wheelTotal = 0;
-        this.wheelTime = now;
-        this.wheelTotal += delta;
-        const steps = Math.min(3, Math.floor(Math.abs(this.wheelTotal) / 100));
-        if (!steps) return;
-        const direction = Math.sign(this.wheelTotal);
-        this.wheelTotal -= direction * steps * 100;
-        this.navigating = true;
-        try {
-          for (let i = 0; i < steps; i++) this.host.navigate("row", direction);
-        } finally {
-          this.navigating = false;
-        }
-      },
-      { ...{ passive: false }, signal: this.events.signal },
-    );
     window.addEventListener("blur", () => this.cancel(), { signal: this.events.signal });
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) this.cancel();

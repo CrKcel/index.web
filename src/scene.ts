@@ -238,7 +238,6 @@ export class ArchiveScene {
     hover: (cell) => this.setHover(cell),
     pointed: (x, y) => this.pointer.set(x, y),
     emitSelect: (cell) => this.onSelect?.(fileAtCell(cell), cell),
-    navigate: (axis, direction) => this.onNavigate?.(axis, direction),
     relayPick: (key) => this.onRelayPick?.(key),
     rotate: (delta) => {
       this.targetRotation = THREE.MathUtils.clamp(this.targetRotation + delta, -0.8, 0.8);
@@ -283,7 +282,7 @@ export class ArchiveScene {
     this.renderer.toneMappingExposure = 1.05;
     this.renderer.domElement.setAttribute(
       "aria-label",
-      "三维研究档案阵列，点击选择，左右拖动切列，上下拖动或滚轮切换列内档案",
+      "三维研究档案阵列，点击选择，左右拖动切列，上下拖动切换列内档案",
     );
     container.appendChild(this.renderer.domElement);
     this.scene.background = new THREE.Color("#eae5e1");
