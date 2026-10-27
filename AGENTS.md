@@ -29,7 +29,6 @@
 | [`content/archives.yaml`](content/archives.yaml) | 检索筛选器与三维阵列的五列分类 |
 | [`src/data.ts`](src/data.ts) | 档案类型与阵列位置映射 |
 | [`public/assets/`](public/assets/) | 运行所需的 GLB 模型 |
-| [`art/`](art/) | Blender 源文件、建模与审阅脚本 |
 | [`scripts/`](scripts/) | 构建、部署、内容校验与行为检查 |
 | [`docs/`](docs/) | 本文档的截图与设计、部署说明 |
 
